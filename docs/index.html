@@ -1,0 +1,592 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>RWE Coal Exit Tracker</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Public+Sans:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a long single-column report with full-width "bands"; each band = one step of the argument
+   (sector -> audit -> fleet -> simulator -> credibility -> emissions -> verdict). Charts sit in the measure. */
+:root {
+  --bg: #f2f4f5;          /* cool paper, like a grid operator's report */
+  --panel: #ffffff;
+  --ink: #15202a;
+  --ink-2: #4c5866;
+  --muted: #8a949e;
+  --line: #d9dee3;
+  --accent: #0d6d8c;      /* offshore blue-teal */
+  --coal: #5a4636;        /* Rhineland lignite umber */
+  --coal-2: #a39282;
+  --s-track: #d4602c;
+  --s-plan: #2a78d6;
+  --s-full: #179a6c;
+  --bad: #c43c3b;
+  --good: #17805a;
+  --display: "Archivo", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --body: "Public Sans", "Segoe UI", Helvetica, Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11171c; --panel: #182129; --ink: #e8edf1; --ink-2: #aab5bf; --muted: #76828d; --line: #2a3640;
+    --accent: #4bb3d4; --coal: #b59a83; --coal-2: #6e5d50; --s-track: #e8743f; --s-plan: #4b93ea; --s-full: #2bb985;
+    --bad: #ef6b6a; --good: #3fc08e; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11171c; --panel: #182129; --ink: #e8edf1; --ink-2: #aab5bf; --muted: #76828d; --line: #2a3640;
+  --accent: #4bb3d4; --coal: #b59a83; --coal-2: #6e5d50; --s-track: #e8743f; --s-plan: #4b93ea; --s-full: #2bb985;
+  --bad: #ef6b6a; --good: #3fc08e; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.6; }
+.wrap { max-width: 1080px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.band { padding-block: 56px; border-top: 1px solid var(--line); }
+.band.alt { background: var(--panel); }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; line-height: 1.05; }
+h1 { font-size: clamp(2.4rem, 6vw, 4.6rem); font-weight: 850; font-stretch: 72%; letter-spacing: -0.01em; text-transform: uppercase; }
+h2 { font-size: clamp(1.6rem, 3.4vw, 2.4rem); font-weight: 800; font-stretch: 80%; text-transform: uppercase; }
+h3 { font-size: 1.1rem; font-weight: 700; font-stretch: 90%; }
+p { margin: 0; max-width: 66ch; }
+.lede { font-size: 1.15rem; color: var(--ink-2); }
+.eyebrow { font-family: var(--mono); font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+.stack { display: flex; flex-direction: column; gap: 16px; }
+.stack-lg { display: flex; flex-direction: column; gap: 28px; }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; }
+@media (max-width: 760px) { .grid2 { grid-template-columns: 1fr; } }
+.mono { font-family: var(--mono); }
+.num { font-variant-numeric: tabular-nums; }
+.kpi .v, .gauge-num { font-variant-numeric: tabular-nums; }
+.small { font-size: 0.86rem; color: var(--ink-2); }
+
+/* hero */
+.hero { padding-block: 48px 40px; }
+.hero-top { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; align-items: baseline; }
+.clock { font-family: var(--mono); font-size: 0.85rem; color: var(--ink-2); border: 1px solid var(--line); padding: 6px 10px; border-radius: 3px; }
+.clock b { color: var(--bad); font-weight: 500; }
+.verdict { margin-top: 28px; display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 32px; align-items: end; }
+@media (max-width: 760px) { .verdict { grid-template-columns: 1fr; } }
+.gauge { background: var(--panel); border: 1px solid var(--line); padding: 20px; border-radius: 4px; }
+.gauge-num { font-family: var(--display); font-weight: 850; font-stretch: 70%; font-size: clamp(4rem, 12vw, 7rem); line-height: 0.9; color: var(--s-plan); }
+.scale { position: relative; height: 34px; margin-top: 14px; }
+.scale .track { position: absolute; left: 0; right: 0; top: 14px; height: 6px; background: var(--line); border-radius: 3px; }
+.scale .band90 { position: absolute; top: 12px; height: 10px; background: color-mix(in srgb, var(--s-plan) 30%, transparent); border-radius: 3px; }
+.scale .med { position: absolute; top: 6px; width: 3px; height: 22px; background: var(--s-plan); }
+.scale .one { position: absolute; top: 0; width: 2px; height: 34px; background: var(--ink); }
+.scale-lab { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 0.75rem; color: var(--muted); }
+.kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; border-top: 2px solid var(--ink); margin-top: 32px; }
+@media (max-width: 640px) { .kpis { grid-template-columns: 1fr; } }
+.kpi { padding: 14px 16px 6px 0; border-bottom: 1px solid var(--line); }
+.kpi .v { font-family: var(--display); font-weight: 800; font-stretch: 75%; font-size: 2.2rem; line-height: 1.1; }
+.kpi .l { font-size: 0.85rem; color: var(--ink-2); }
+
+/* cards and callouts */
+.callout { border-left: 4px solid var(--bad); background: var(--panel); padding: 18px 20px; border-radius: 0 4px 4px 0; }
+.band.alt .callout { background: var(--bg); }
+.flip { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; font-family: var(--display); font-stretch: 75%; font-weight: 800; font-size: 3rem; line-height: 1; }
+.flip .from { color: var(--muted); text-decoration: line-through; text-decoration-thickness: 3px; }
+.flip .arrow { color: var(--ink-2); font-size: 2rem; }
+.flip .to { color: var(--bad); }
+.chart { width: 100%; min-height: 340px; }
+.chart.tall { min-height: 460px; }
+.figure { background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 12px; min-width: 0; }
+.band.alt .figure { background: var(--bg); }
+.figcap { font-size: 0.82rem; color: var(--ink-2); padding: 6px 4px 2px; }
+
+/* simulator */
+.sim { display: grid; grid-template-columns: minmax(0, 320px) minmax(0, 1fr); gap: 28px; }
+@media (max-width: 860px) { .sim { grid-template-columns: 1fr; } }
+.controls { display: flex; flex-direction: column; gap: 14px; }
+.ctl label { display: flex; justify-content: space-between; font-size: 0.88rem; gap: 8px; }
+.ctl label span.val { font-family: var(--mono); color: var(--accent); }
+input[type=range] { width: 100%; accent-color: var(--accent); }
+.check { display: flex; gap: 8px; align-items: flex-start; font-size: 0.88rem; }
+.check input { margin-top: 4px; accent-color: var(--accent); }
+.presets { display: flex; gap: 8px; flex-wrap: wrap; }
+button.preset, .seg button { font: 600 0.85rem var(--body); padding: 7px 12px; border-radius: 3px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); cursor: pointer; }
+button.preset[data-s="Track record"] { border-left: 4px solid var(--s-track); }
+button.preset[data-s="Current plan"] { border-left: 4px solid var(--s-plan); }
+button.preset[data-s="Full delivery"] { border-left: 4px solid var(--s-full); }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+button.preset:hover, .seg button:hover { border-color: var(--accent); }
+.seg { display: inline-flex; gap: 0; }
+.seg button { border-radius: 0; }
+.seg button:first-child { border-radius: 3px 0 0 3px; }
+.seg button:last-child { border-radius: 0 3px 3px 0; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.readout { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 560px) { .readout { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.readout div { border-top: 2px solid var(--ink); padding-top: 6px; }
+.readout .v { font-family: var(--display); font-stretch: 75%; font-weight: 800; font-size: 1.9rem; line-height: 1.1; }
+.readout .l { font-size: 0.78rem; color: var(--ink-2); }
+.pill { display: inline-block; font: 600 0.75rem var(--mono); padding: 2px 8px; border-radius: 99px; letter-spacing: 0.04em; }
+.pill.ok { background: color-mix(in srgb, var(--good) 18%, transparent); color: var(--good); }
+.pill.no { background: color-mix(in srgb, var(--bad) 16%, transparent); color: var(--bad); }
+.pill.mid { background: color-mix(in srgb, var(--s-track) 18%, transparent); color: var(--s-track); }
+
+/* tables */
+.tbl { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+th { font-family: var(--mono); font-weight: 500; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-2); }
+td.num, th.num { text-align: right; }
+ol.recs { margin: 0; padding-left: 1.3em; display: flex; flex-direction: column; gap: 12px; max-width: 70ch; }
+ol.recs li::marker { font-family: var(--display); font-weight: 800; color: var(--accent); }
+footer { padding-block: 40px; font-size: 0.85rem; color: var(--ink-2); border-top: 1px solid var(--line); }
+footer a, .src a { color: var(--accent); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<header class="wrap hero">
+  <div class="hero-top">
+    <span class="eyebrow">Climate Risks · IDSI 51003 · sustainability consultant brief</span>
+    <span class="clock" id="clock">Lignite exit: <b>31 Mar 2030</b></span>
+  </div>
+  <div class="stack" style="margin-top:22px">
+    <h1>Is RWE on track for its 2030 coal exit?</h1>
+    <p class="lede">The lignite exit on 31 March 2030 is fixed by law. We test whether RWE's transition is credible as a business: does its new wind and solar replace the output of the coal it closes, and has RWE ever built at the pace this requires?</p>
+  </div>
+  <div class="verdict">
+    <div class="stack">
+      <span class="eyebrow">Our answer</span>
+      <p style="font-size:1.3rem; line-height:1.4; font-weight:600">Not on the projects visible today. The pace needed is close to RWE's best record and within its 2026 guidance, but named, dated projects replace only about half of the coal output.</p>
+      <p class="small">H0 is evaluated through two criteria set after our project definition, before the final analysis: C1 (coverage likely, P ≥ 0.66) is not met on identifiable projects; C2 (pace within RWE's best 3-year record, coverage-adjusted basis) narrowly fails. RWE's coal timeline is aligned with the IEA Net Zero milestone; the replacement is not, on identifiable projects.</p>
+    </div>
+    <div class="gauge">
+      <div class="small">Replacement ratio in 2030, Current plan (median and 90% interval)</div>
+      <div class="gauge-num" id="g-num">0.51</div>
+      <div class="scale" aria-hidden="true">
+        <div class="track"></div><div class="band90" id="g-band"></div><div class="one" id="g-one"></div><div class="med" id="g-med"></div>
+      </div>
+      <div class="scale-lab"><span>0</span><span>1.0 = coal output replaced</span><span>2.0</span></div>
+    </div>
+  </div>
+  <div class="kpis">
+    <div class="kpi"><div class="v" id="k-need">2.23 GW/yr</div><div class="l">new wind + solar needed every year to the end of 2030</div></div>
+    <div class="kpi"><div class="v" id="k-named">1.15 GW/yr</div><div class="l">pace supported by named, dated projects</div></div>
+    <div class="kpi"><div class="v" id="k-guid">3.17 GW/yr</div><div class="l">RWE guidance 2026–31 (incl. batteries, excl. German flexible capacity)</div></div>
+  </div>
+</header>
+
+<section class="band alt"><div class="wrap stack-lg">
+  <div class="stack">
+    <span class="eyebrow">1 · The sector</span>
+    <h2>Europe's coal sits where the pipeline isn't</h2>
+    <p>Europe (EU-27, UK, Norway, Switzerland) still runs <b>77.5 GW</b> of coal, 70% of it in Germany and Poland. At €100 per tonne of CO₂ that fleet's carbon bill is about <b>€35 bn a year</b>, and two RWE plants are in Europe's top five. The countries and companies with the most coal have the smallest dated wind and solar pipelines.</p>
+  </div>
+  <div class="grid2">
+    <div class="figure"><div id="c-country" class="chart"></div><div class="figcap">Expected new wind + solar output by 2030 minus coal output (TWh/yr), by country. Dated utility-scale projects only, weighted by sector build rates.</div></div>
+    <div class="figure"><div id="c-peers" class="chart"></div><div class="figcap">European utilities, European assets only: coal output to replace (left) vs expected new wind + solar (right). GEM ownership is incomplete for every company: context, not a ranking.</div></div>
+  </div>
+  <div class="figure">
+    <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; align-items:center; padding:4px">
+      <h3>The most carbon-exposed coal plants in Europe</h3>
+      <div class="seg" role="group" aria-label="Carbon price" id="price-seg">
+        <button data-p="50" aria-pressed="false">€50</button><button data-p="82" aria-pressed="false">€82 (Aug 2026)</button><button data-p="100" aria-pressed="true">€100</button><button data-p="150" aria-pressed="false">€150</button>
+      </div>
+    </div>
+    <div id="c-plants" class="chart"></div>
+    <div class="figcap">Yearly carbon cost = capacity × 50% load × emission factor (lignite 1.15, hard coal 0.90 t/MWh) × price. RWE plants in the accent colour.</div>
+  </div>
+</div></section>
+
+<section class="band"><div class="wrap stack-lg">
+  <div class="stack">
+    <span class="eyebrow">2 · The data audit</span>
+    <h2>Four corrections before any result</h2>
+  </div>
+  <div class="grid2">
+    <div class="callout stack">
+      <p><b>Eemshaven belongs to RWE.</b> GEM lists this Dutch hard-coal plant (2 × 800 MW in GEM; RWE quotes 1,560–1,580 MW) under Essent / E.ON, a leftover of the 2019 asset swap. We add it back, counting 75% of its output as coal.</p>
+      <p><b>The pipeline is mostly undated.</b> Only about a third of RWE's wind and solar pipeline capacity has a start year in GEM. Undated projects are left out of the main case.</p>
+    </div>
+    <div class="stack">
+      <p class="small"><b>GEM statuses lag reality.</b> Nordseecluster A and B, Thor and OranjeWind are listed as "pre-construction" but are under construction; F.E.W. Baltic II was sold to PGE; Dogger Bank South and Awel y Môr have public commissioning dates after 2030. We reclassified every RWE offshore project from public sources.</p>
+      <p class="small"><b>Coverage.</b> GEM sees about <b id="a-cov">64%</b> of the wind and solar RWE reports. Every result is shown on a GEM-visible and a coverage-adjusted basis, and we never compare numbers across bases.</p>
+      <p class="small"><b>Utilisation.</b> Fitting our model on RWE's official Scope 1 emissions (five years, 2019–2025) gives a factor B = <span id="a-b">0.92</span> (90% CI 0.83–1.02), drawn in the Monte Carlo: the coal output to replace uses an effective load factor of <span id="a-cf">0.46</span>.</p>
+    </div>
+  </div>
+  <div class="tbl figure"><table id="t-ev"></table></div>
+</div></section>
+
+<section class="band alt"><div class="wrap stack-lg">
+  <div class="stack">
+    <span class="eyebrow">3 · The coal fleet</span>
+    <h2><span id="t-coalgw">7.9 GW</span> of coal to close, unit by unit</h2>
+    <p>Equity share, coal part only. The red extension shows the three 1 GW-class lignite units that could sit in a federal reserve until the end of 2033; Berlin let its August 2026 review deadline pass without deciding.</p>
+  </div>
+  <div class="seg" role="group" aria-label="Coal case" id="fleet-seg"><button data-c="contract" aria-pressed="true">Contract: out by 2030</button><button data-c="reserve" aria-pressed="false">Reserve until 2033</button></div>
+  <div class="figure"><div id="c-fleet" class="chart tall"></div></div>
+</div></section>
+
+<section class="band" id="simulator"><div class="wrap stack-lg">
+  <div class="stack">
+    <span class="eyebrow">4 · The metric, live</span>
+    <h2>Run the Monte Carlo yourself</h2>
+    <p>Replacement ratio = output of new wind + solar online by 2030 ÷ output of the coal RWE committed to close (TWh/yr). Each of the <span id="t-nproj">–</span> pipeline units is drawn with its probability; offshore projects share a common shock. 3,000 draws run in your browser each time you change a setting.</p>
+  </div>
+  <div class="presets" id="presets">
+    <button class="preset" data-s="Current plan">Current plan</button>
+    <button class="preset" data-s="Full delivery">Full delivery</button>
+  </div>
+  <div class="sim">
+    <div class="controls">
+      <div class="ctl"><label for="s-ontime">Slippage factor (dated projects on time) <span class="val" id="v-ontime"></span></label><input id="s-ontime" type="range" min="0.4" max="1" step="0.05"></div>
+      <div class="ctl"><label for="s-nv">Norfolk Vanguard online by 2030 <span class="val" id="v-nv"></span></label><input id="s-nv" type="range" min="0" max="1" step="0.05"></div>
+      <div class="ctl"><label for="s-ncb">Nordseecluster B online by 2030 <span class="val" id="v-ncb"></span></label><input id="s-ncb" type="range" min="0" max="1" step="0.05"></div>
+      <div class="ctl"><label for="s-rho">Correlation between offshore projects <span class="val" id="v-rho"></span></label><input id="s-rho" type="range" min="0" max="0.9" step="0.1"></div>
+      <div class="ctl"><label for="s-ccf">Effective coal load factor <span class="val" id="v-ccf"></span></label><input id="s-ccf" type="range" min="0.3" max="0.65" step="0.01"></div>
+      <label class="check"><input id="c-und" type="checkbox"> Include undated onshore / solar</label>
+      <label class="check"><input id="c-adj" type="checkbox"> Coverage-adjusted basis (onshore / solar ÷ <span id="v-cov">0.64</span>)</label>
+      <label class="check"><input id="c-denl" type="checkbox"> Germany + Netherlands pipeline only</label>
+      <label class="check"><input id="c-exit" type="checkbox"> Only capacity online before 31 Mar 2030</label>
+      <label class="check"><input id="c-eems" type="checkbox" checked> Count Eemshaven (audit fix)</label>
+      <label class="check"><input id="c-gkm" type="checkbox" checked> Count GKM Mannheim (40% stake)</label>
+    </div>
+    <div class="stack">
+      <div class="readout">
+        <div><div class="v" id="r-med">–</div><div class="l">median ratio</div></div>
+        <div><div class="v" id="r-ci">–</div><div class="l">90% interval</div></div>
+        <div><div class="v" id="r-p">–</div><div class="l">P(ratio ≥ 1), rounded</div></div>
+        <div><div class="v" id="r-gw">–</div><div class="l">new GW online by 2030</div></div>
+      </div>
+      <div><span class="pill" id="r-pill">–</span></div>
+      <div class="figure"><div id="c-sim" class="chart"></div></div>
+    </div>
+  </div>
+</div></section>
+
+<section class="band alt"><div class="wrap stack-lg">
+  <div class="stack">
+    <span class="eyebrow">5 · The credibility test</span>
+    <h2>The pace is close to RWE's record. The projects are not named yet.</h2>
+    <p>Replacing the coal output needs about <b id="t-need">11.1 GW</b> of new wind and solar, so <b id="t-pace">2.23 GW per year</b> to the end of 2030. On the decisive coverage-adjusted basis, that is 1.14 times RWE's best three years (1.8 times as seen in GEM; 0.93 times RWE's reported 2024–25 commissioning, which includes batteries). The pace implied by the identifiable pipeline, 1.15 GW per year, is within RWE's history: the shortfall comes from projects that are not yet named and dated, while RWE's March 2026 guidance would be enough.</p>
+  </div>
+  <div class="grid2">
+    <div class="figure"><div id="c-adds" class="chart"></div><div class="figcap">Wind + solar commissioned per year: GEM-visible, coverage-adjusted, and RWE-reported (all technologies). Red line: pace needed.</div></div>
+    <div class="figure"><div id="c-pace" class="chart"></div><div class="figcap">Pace needed vs the evidence, in GW per year.</div></div>
+  </div>
+  <div class="tbl figure"><table id="t-scen"></table></div>
+</div></section>
+
+<section class="band"><div class="wrap stack-lg">
+  <div class="stack">
+    <span class="eyebrow">6 · Going further</span>
+    <h2>Emissions, carbon cost and firm capacity</h2>
+    <p>RWE's SBTi-validated target is −71.1% Scope 1+2 emissions per MWh by 2030 versus 2022. RWE publishes 0.55 tCO₂e/MWh for 2022 (0.43 in 2025), so the 2030 target is 0.159. Our model reproduces the 2025 value (0.44). Under our model assumptions, the 2030 intensity stays above the target in every scenario, mainly because of the gas fleet; with a five-point calibration and constant gas utilisation, read this as a warning rather than a prediction.</p>
+  </div>
+  <div class="seg" role="group" aria-label="Coal case for emissions" id="em-seg"><button data-c="contract 2030" aria-pressed="true">Coal closed by 2030</button><button data-c="reserve to 2033 (dispatched at 10%)" aria-pressed="false">3 GW reserve to 2033</button></div>
+  <div class="grid2">
+    <div class="figure"><div id="c-int" class="chart"></div><div class="figcap">2030 emission intensity vs the SBTi target. Error bars: 90% range.</div></div>
+    <div class="figure"><div id="c-em" class="chart"></div><div class="figcap">RWE's official Scope 1 emissions, our calibrated model, and the Current plan projection.</div></div>
+  </div>
+  <div class="grid2">
+    <div class="figure stack">
+      <div style="padding:4px" class="stack">
+        <h3>Carbon cost relative to EBITDA</h3>
+        <div class="ctl"><label for="s-price">Carbon price <span class="val" id="v-price"></span></label><input id="s-price" type="range" min="30" max="200" step="1" value="82"></div>
+      </div>
+      <div id="c-var" class="chart" style="min-height:280px"></div>
+      <div class="figcap">A flow ratio, not a value-at-risk: gross of pass-through into power prices and of the €2.6 bn exit compensation. 2030 is divided by RWE's 2027 EBITDA guidance (€6.5 bn).</div>
+    </div>
+    <div class="figure stack">
+      <div style="padding:4px"><h3>Energy is not firm capacity</h3></div>
+      <div id="c-firm" class="chart" style="min-height:280px"></div>
+      <div class="figcap">Germany + Netherlands. Capacity credits in line with GB Capacity Market de-rating proposals (offshore 13%, onshore 8.5%, solar 1.5%); 90% for thermal plants.</div>
+    </div>
+  </div>
+</div></section>
+
+<section class="band alt"><div class="wrap stack-lg">
+  <div class="stack">
+    <span class="eyebrow">7 · What we advise</span>
+    <h2>Judge RWE on named, dated projects</h2>
+  </div>
+  <ol class="recs">
+    <li><b>Investors:</b> judge RWE on named, dated projects: track the final investment decision on Norfolk Vanguard, progress on Nordseecluster B, commissioned GW per year against about 2.2 GW, and the share of the 2031 guidance attached to identified projects.</li>
+    <li><b>RWE:</b> a dated 2026–2030 project list would close most of the credibility gap we measure. The SBTi intensity target also needs a plan for gas utilisation.</li>
+    <li><b>Policymakers:</b> the coal exit is legally fixed, but German firm capacity after 2030 is a system question. Timely flexible-capacity tenders are the lever; a lignite reserve adds emissions and carbon exposure.</li>
+  </ol>
+  <div class="stack">
+    <h3>Limits</h3>
+    <p class="small">GEM ownership coverage (64%) and a mostly undated pipeline make our main case a lower bound by construction. Sector build rates (resolved projects only, global), the 0.8 slippage factor, the offshore probabilities and the correlation are assumptions; our back-test suggests the 90% intervals are still too narrow. Capacity factors are constant; utilisation is calibrated on five years. Norfolk Vanguard's investment decision was targeted for summer 2026; we found no public confirmation as of 8 November 2026.</p>
+  </div>
+</div></section>
+
+<footer><div class="wrap stack">
+  <p><b>Team:</b> Victor Henz, Edgar Gusching, Marius Rang, Ylias Guetari · Climate Risks (IDSI 51003), Research and Emerging Topics, BSc AI, Data &amp; Management Sciences (CentraleSupélec × ESSEC).</p>
+  <p class="src"><b>Sources:</b> Global Energy Monitor, Global Integrated Power Tracker, September 2026 V2 (CC BY 4.0) · RWE press releases (14 Mar 2024, 20 Mar 2025, 14 Jan 2026, 12 Mar 2026, 31 Aug 2026), FY2022 generation data and Annual Report 2024 · SBTi validation of RWE targets (16 Jan 2025) · RWE Benelux, Eemshaven · Clean Thinking, 13 Aug 2026 · Offshore Magazine, 29 Apr 2025 · IEA, Renewables 2025 · S&amp;P Global Platts, EUA Dec-26 at €82.36/t (27 Aug 2026) · European Commission state-aid approval, 11 Dec 2023.</p>
+  <p class="small">Use of AI tools: we used an AI assistant (Claude, Anthropic) to help write code, draft text and build this page; choices and results were checked by the team.</p>
+</div></footer>
+<script>
+/* load the chart library with fallbacks (if one CDN fails, try the next) */
+(function () {
+  const urls = ["https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js",
+                "https://unpkg.com/plotly.js-dist-min@2.35.2/plotly.min.js",
+                "https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.35.2/plotly.min.js"];
+  let i = 0;
+  (function next() {
+    if (i >= urls.length) return;
+    const sc = document.createElement("script"); sc.src = urls[i++]; sc.async = false;
+    sc.onerror = next; document.head.appendChild(sc);
+  })();
+})();
+</script>
+<script>
+const DATA = {"params":{"source":"GEM Global Integrated Power Tracker, September 2026 V2 (CC BY 4.0)","target":2030,"now":2025,"N":5000,"H_YEAR":8.76,"cf_range":{"offshore":[0.33,0.38,0.45],"onshore":[0.2,0.26,0.33],"solar":[0.09,0.15,0.22],"coal":[0.4,0.5,0.65],"gas":[0.25,0.4,0.55]},"cf_mode":{"offshore":0.38,"onshore":0.26,"solar":0.15,"coal":0.5,"gas":0.4},"ef":{"lignite":1.15,"hard coal":0.9,"gas":0.4},"B":0.9248690392378399,"coal_cf_eff":0.46243451961891996,"build_rate":{"offshore":0.14346831183594033,"onshore":0.6937713442629716,"solar":0.7267242114282393},"on_time":0.8,"p_con":0.95,"rho":{"offshore":0.5,"rest":0.3},"cap_now":12.63709,"old_retiring":0.42233333333333334,"coverage":0.6448216666666666,"reported_2024":18.0,"coal_gw_main":7.9248,"coal_gw_noeems":6.7248,"coal_gw_nogkm":7.066000000000001,"coal_twh":32.102781470225906,"gas_gw":15.73518,"new_gas_gw":1.7805,"need_new_gw":11.145587725204196,"req_pace":{"end of 2030 (5 years)":2.229117545040839,"31 March 2030 (4.25 years)":2.622491229459811},"pace":{"GEM-visible":{"last 10 years":0.783702,"last 4 years":1.009005,"best 3-year average":1.2558399999999998},"coverage-adjusted":{"last 10 years":1.2153778951803214,"last 4 years":1.56478147704921,"best 3-year average":1.947577237117239}},"hist_additions_last10":[0.32489999999999997,0.975,0.19590000000000002,0.6718,0.5045999999999999,1.1288,1.96112,0.6776,0.356,1.0413],"pipe_cf":0.32880285646927393,"int_2022":0.55,"int_target":0.15895000000000004,"ebitda_2025":5.1,"ebitda_2027":6.5,"prices":[50,82,100,150],"credit":{"offshore":0.13,"onshore":0.085,"solar":0.015,"coal":0.9,"gas":0.9},"firm":{"firm capacity lost (coal)":7.13232,"firm from new wind/solar (expected, worldwide)":0.6227995996775404,"of which in Germany + Netherlands":0.13921960000000003,"firm from new H2-ready gas (GEM pipeline <= 2030)":1.60245,"net firm gap in DE + NL (GW)":5.3906504},"eu_ratio":0.27329587518897464,"metric":{"GEM-visible":{"Portfolio (worldwide pipeline)":0.5152975695770068,"Germany + Netherlands only":0.11104578272466165},"coverage-adjusted":{"Portfolio (worldwide pipeline)":0.5863537118286555,"Germany + Netherlands only":0.11104578272466165}},"iea_mult":{"IEA main case (x2.49)":2.486086956521739,"IEA accelerated case (x2.72)":2.7130434782608694,"Tripling / NZE (x3.0)":3.0},"cap22":10.60719,"scenarios":[{"scenario":"Current plan","basis":"GEM","new_GW_median":5.7585749999999996,"new_GW_p05":3.5542800000000003,"new_GW_p95":7.863900000000001,"ratio_median":0.5118856379696879,"ratio_p05":0.30877809897428354,"ratio_p95":0.7220244127797107,"P(ratio>=1)":0.0002,"implied_pace_GW_yr":1.1517149999999998},{"scenario":"Full delivery","basis":"GEM","new_GW_median":12.214966666666665,"new_GW_p05":8.487341666666666,"new_GW_p95":13.814666666666666,"ratio_median":1.0173153392009577,"ratio_p05":0.6988166903937463,"ratio_p95":1.319238875028466,"P(ratio>=1)":0.5418,"implied_pace_GW_yr":2.442993333333333},{"scenario":"Track record","basis":"GEM","new_GW_median":3.83742,"new_GW_p05":2.2515,"new_GW_p95":5.8658100000000015,"ratio_median":0.3373683676192998,"ratio_p05":0.19497439775561784,"ratio_p95":0.5437822612892709,"P(ratio>=1)":0.0,"implied_pace_GW_yr":0.7674839999999999},{"scenario":"Current plan","basis":"adjusted","new_GW_median":6.823339116499911,"new_GW_p05":3.943366846208124,"new_GW_p95":9.955212786997954,"ratio_median":0.5742925787632993,"ratio_p05":0.34282601704870197,"ratio_p95":0.8430394597275369,"P(ratio>=1)":0.007,"implied_pace_GW_yr":1.3646678232999823},{"scenario":"Full delivery","basis":"adjusted","new_GW_median":15.468908802002966,"new_GW_p05":10.479808403873939,"new_GW_p95":17.641959170795715,"ratio_median":1.2194896467887182,"ratio_p05":0.8362905630383286,"ratio_p95":1.5967568745326375,"P(ratio>=1)":0.8326,"implied_pace_GW_yr":3.093781760400593},{"scenario":"Track record","basis":"adjusted","new_GW_median":5.951133776005252,"new_GW_p05":3.49166306963424,"new_GW_p95":9.096794204082267,"ratio_median":0.5231963891090814,"ratio_p05":0.3023694888596349,"ratio_p95":0.8433064355611566,"P(ratio>=1)":0.01,"implied_pace_GW_yr":1.1902267552010504}],"c1":[{"index":"Current plan, GEM-visible, end 2030","P(ratio>=1)":0.0002,"median ratio":0.5118856379696879,"rounded":0.0,"likelihood":"exceptionally unlikely","C1 pass (P >= 0.66)":false},{"index":"Current plan, coverage-adjusted, end 2030","P(ratio>=1)":0.007,"median ratio":0.5742925787632993,"rounded":0.0,"likelihood":"exceptionally unlikely","C1 pass (P >= 0.66)":false},{"index":"Current plan, GEM-visible, online before 31 Mar 2030","P(ratio>=1)":0.0,"median ratio":0.4660889083613652,"rounded":0.0,"likelihood":"exceptionally unlikely","C1 pass (P >= 0.66)":false},{"index":"Full delivery, GEM-visible, end 2030","P(ratio>=1)":0.5418,"median ratio":1.0173153392009577,"rounded":0.55,"likelihood":"about as likely as not","C1 pass (P >= 0.66)":false},{"index":"Full delivery, coverage-adjusted, end 2030","P(ratio>=1)":0.8326,"median ratio":1.2194896467887182,"rounded":0.85,"likelihood":"likely","C1 pass (P >= 0.66)":true}],"c2":[{"index":"GEM-visible","best 3-year average":1.2558399999999998,"last 10 years":0.783702,"required / best (end of 2030 (5 years))":1.775001230284781,"required / best (31 March 2030 (4.25 years))":2.088236741511507,"C2 pass (end-2030 timing)":false,"role":"lower bound"},{"index":"coverage-adjusted","best 3-year average":1.947577237117239,"last 10 years":1.2153778951803214,"required / best (end of 2030 (5 years))":1.1445592516476162,"required / best (31 March 2030 (4.25 years))":1.346540296056019,"C2 pass (end-2030 timing)":false,"role":"DECISIVE"},{"index":"RWE-reported (2024-25, all technologies)","best 3-year average":2.4,"last 10 years":NaN,"required / best (end of 2030 (5 years))":0.9287989771003496,"required / best (31 March 2030 (4.25 years))":1.092704678941588,"C2 pass (end-2030 timing)":true,"role":"upper bound (incl. batteries)"},{"index":"coverage-adjusted, excl. pre-2023 US assets","best 3-year average":1.1700496002770793,"last 10 years":0.755103348987963,"required / best (end of 2030 (5 years))":1.9051479052793678,"required / best (31 March 2030 (4.25 years))":2.2413504767992563,"C2 pass (end-2030 timing)":false,"role":"acquisition check"}],"mix_now":{"coal":8.3248,"gas":15.73518,"wind":11.001923333333334,"solar":1.8511666666666668,"other":2.2474499999999997},"guidance_pace":3.1666666666666665,"guidance_ratio":1.4205920516446569,"existing_re_2030_twh":33.62538944495825,"other_re_twh":6.199999999999999},"plants":[{"name":"Belchatow","cc":"PL","GW":5.03,"MtCO2":25.336,"kind":"lignite","is_RWE":false},{"name":"Kozienice","cc":"PL","GW":3.994,"MtCO2":16.921,"kind":"hard coal","is_RWE":false},{"name":"Boxberg","cc":"DE","GW":2.582,"MtCO2":13.006,"kind":"lignite","is_RWE":false},{"name":"Niederaussem","cc":"DE","GW":2.278,"MtCO2":11.474,"kind":"lignite","is_RWE":true},{"name":"Neurath","cc":"DE","GW":2.2,"MtCO2":11.081,"kind":"lignite","is_RWE":true},{"name":"Opole","cc":"PL","GW":2.563,"MtCO2":10.103,"kind":"hard coal","is_RWE":false},{"name":"Tur\u00f3w","cc":"PL","GW":1.948,"MtCO2":9.812,"kind":"lignite","is_RWE":false},{"name":"Jaworzno","cc":"PL","GW":2.395,"MtCO2":9.441,"kind":"hard coal","is_RWE":false},{"name":"Lippendorf","cc":"DE","GW":1.866,"MtCO2":9.399,"kind":"lignite","is_RWE":false},{"name":"GKM (Mannheim)","cc":"DE","GW":2.147,"MtCO2":8.463,"kind":"hard coal","is_RWE":false},{"name":"Janschwalde","cc":"DE","GW":1.605,"MtCO2":8.084,"kind":"lignite","is_RWE":false},{"name":"Maritsa Iztok-2","cc":"BG","GW":1.602,"MtCO2":8.069,"kind":"lignite","is_RWE":false},{"name":"Schwarze Pumpe","cc":"DE","GW":1.6,"MtCO2":8.059,"kind":"lignite","is_RWE":false},{"name":"Polaniec","cc":"PL","GW":1.657,"MtCO2":6.532,"kind":"hard coal","is_RWE":false},{"name":"Weisweiler","cc":"DE","GW":1.255,"MtCO2":6.321,"kind":"lignite","is_RWE":true},{"name":"Eemshaven","cc":"NL","GW":1.6,"MtCO2":6.307,"kind":"hard coal","is_RWE":false},{"name":"Pocerady","cc":"CZ","GW":1.0,"MtCO2":5.037,"kind":"lignite","is_RWE":false},{"name":"Rovinari","cc":"RO","GW":0.99,"MtCO2":4.987,"kind":"lignite","is_RWE":false},{"name":"Cordemais","cc":"FR","GW":1.26,"MtCO2":4.967,"kind":"hard coal","is_RWE":false},{"name":"Schkopau","cc":"DE","GW":0.98,"MtCO2":4.936,"kind":"lignite","is_RWE":false},{"name":"Matra","cc":"HU","GW":0.884,"MtCO2":4.453,"kind":"lignite","is_RWE":false},{"name":"Maasvlakte (Uniper)","cc":"NL","GW":1.1,"MtCO2":4.336,"kind":"hard coal","is_RWE":false},{"name":"Datteln","cc":"DE","GW":1.1,"MtCO2":4.336,"kind":"hard coal","is_RWE":false},{"name":"Heilbronn","cc":"DE","GW":1.066,"MtCO2":4.202,"kind":"hard coal","is_RWE":false},{"name":"Chvaletice","cc":"CZ","GW":0.82,"MtCO2":4.13,"kind":"lignite","is_RWE":false},{"name":"Tusimice","cc":"CZ","GW":0.8,"MtCO2":4.03,"kind":"lignite","is_RWE":false},{"name":"Ledvice","cc":"CZ","GW":0.77,"MtCO2":3.878,"kind":"lignite","is_RWE":false},{"name":"Prunerov","cc":"CZ","GW":0.75,"MtCO2":3.778,"kind":"lignite","is_RWE":false},{"name":"RDK (Karlsruhe)","cc":"DE","GW":0.91,"MtCO2":3.587,"kind":"hard coal","is_RWE":false},{"name":"Laziska","cc":"PL","GW":0.905,"MtCO2":3.568,"kind":"hard coal","is_RWE":false},{"name":"Rybnik","cc":"PL","GW":0.875,"MtCO2":3.449,"kind":"hard coal","is_RWE":false},{"name":"Ptolema\u00efda","cc":"GR","GW":0.66,"MtCO2":3.324,"kind":"lignite","is_RWE":false},{"name":"Turceni","cc":"RO","GW":0.66,"MtCO2":3.324,"kind":"lignite","is_RWE":false},{"name":"Wilhelmshaven Engie","cc":"DE","GW":0.83,"MtCO2":3.272,"kind":"hard coal","is_RWE":false},{"name":"Emile Huchet","cc":"FR","GW":0.647,"MtCO2":3.259,"kind":"lignite","is_RWE":false},{"name":"Luenen-Stummhafen","cc":"DE","GW":0.81,"MtCO2":3.193,"kind":"hard coal","is_RWE":false},{"name":"Maasvlakte (Onyx Power)","cc":"NL","GW":0.8,"MtCO2":3.154,"kind":"hard coal","is_RWE":false},{"name":"Duisburg-Walsum","cc":"DE","GW":0.79,"MtCO2":3.114,"kind":"hard coal","is_RWE":false},{"name":"Altbach","cc":"DE","GW":0.783,"MtCO2":3.087,"kind":"hard coal","is_RWE":false},{"name":"Sostanj","cc":"SI","GW":0.6,"MtCO2":3.022,"kind":"lignite","is_RWE":false},{"name":"Scholven","cc":"DE","GW":0.74,"MtCO2":2.917,"kind":"hard coal","is_RWE":false},{"name":"Quierschied-Weiher","cc":"DE","GW":0.724,"MtCO2":2.854,"kind":"hard coal","is_RWE":false},{"name":"Ostro\u0142\u0119ka","cc":"PL","GW":0.681,"MtCO2":2.685,"kind":"hard coal","is_RWE":false},{"name":"Fiume Santo","cc":"IT","GW":0.64,"MtCO2":2.523,"kind":"hard coal","is_RWE":false},{"name":"Bobov Dol","cc":"BG","GW":0.63,"MtCO2":2.483,"kind":"hard coal","is_RWE":false},{"name":"Meri-Pori","cc":"FI","GW":0.614,"MtCO2":2.42,"kind":"hard coal","is_RWE":false},{"name":"Patnow","cc":"PL","GW":0.474,"MtCO2":2.388,"kind":"lignite","is_RWE":false},{"name":"Berlin-Reuter-West","cc":"DE","GW":0.6,"MtCO2":2.365,"kind":"hard coal","is_RWE":false},{"name":"Siekierki","cc":"PL","GW":0.591,"MtCO2":2.33,"kind":"hard coal","is_RWE":false},{"name":"Sulcis","cc":"IT","GW":0.59,"MtCO2":2.326,"kind":"hard coal","is_RWE":false},{"name":"Melnik","cc":"CZ","GW":0.46,"MtCO2":2.317,"kind":"lignite","is_RWE":false},{"name":"Zeran","cc":"PL","GW":0.586,"MtCO2":2.31,"kind":"hard coal","is_RWE":false},{"name":"Maritsa Iztok-3","cc":"BG","GW":0.454,"MtCO2":2.287,"kind":"lignite","is_RWE":false},{"name":"Staudinger","cc":"DE","GW":0.553,"MtCO2":2.18,"kind":"hard coal","is_RWE":false},{"name":"Rostock","cc":"DE","GW":0.553,"MtCO2":2.18,"kind":"hard coal","is_RWE":false},{"name":"Herne","cc":"DE","GW":0.5,"MtCO2":1.971,"kind":"hard coal","is_RWE":false},{"name":"Kladno","cc":"CZ","GW":0.406,"MtCO2":1.895,"kind":"lignite","is_RWE":false},{"name":"Dolna Odra","cc":"PL","GW":0.464,"MtCO2":1.829,"kind":"hard coal","is_RWE":false},{"name":"Lagisza","cc":"PL","GW":0.46,"MtCO2":1.813,"kind":"hard coal","is_RWE":false},{"name":"Opatovice","cc":"CZ","GW":0.36,"MtCO2":1.813,"kind":"lignite","is_RWE":false},{"name":"Nordjylland","cc":"DK","GW":0.411,"MtCO2":1.62,"kind":"hard coal","is_RWE":false},{"name":"Craiova II","cc":"RO","GW":0.3,"MtCO2":1.511,"kind":"lignite","is_RWE":false},{"name":"Tisova","cc":"CZ","GW":0.276,"MtCO2":1.39,"kind":"lignite","is_RWE":false},{"name":"Krakow-Leg","cc":"PL","GW":0.35,"MtCO2":1.38,"kind":"hard coal","is_RWE":false},{"name":"Alc\u00fadia","cc":"ES","GW":0.26,"MtCO2":1.31,"kind":"lignite","is_RWE":false},{"name":"Skawina","cc":"PL","GW":0.33,"MtCO2":1.301,"kind":"hard coal","is_RWE":false},{"name":"Poznan Karolin","cc":"PL","GW":0.313,"MtCO2":1.234,"kind":"hard coal","is_RWE":false},{"name":"Siersza","cc":"PL","GW":0.306,"MtCO2":1.206,"kind":"hard coal","is_RWE":false},{"name":"Wedel","cc":"DE","GW":0.29,"MtCO2":1.142,"kind":"hard coal","is_RWE":false},{"name":"Wroclaw","cc":"PL","GW":0.263,"MtCO2":1.037,"kind":"hard coal","is_RWE":false},{"name":"Brikel","cc":"BG","GW":0.2,"MtCO2":1.007,"kind":"lignite","is_RWE":false},{"name":"Komorany","cc":"CZ","GW":0.197,"MtCO2":0.992,"kind":"lignite","is_RWE":false},{"name":"Ruse Iztok","cc":"BG","GW":0.23,"MtCO2":0.907,"kind":"hard coal","is_RWE":false},{"name":"Chorzow Elcho","cc":"PL","GW":0.226,"MtCO2":0.891,"kind":"hard coal","is_RWE":false},{"name":"Gdansk-2","cc":"PL","GW":0.218,"MtCO2":0.859,"kind":"hard coal","is_RWE":false},{"name":"Plomin","cc":"HR","GW":0.217,"MtCO2":0.855,"kind":"hard coal","is_RWE":false},{"name":"Lodz-4","cc":"PL","GW":0.215,"MtCO2":0.848,"kind":"hard coal","is_RWE":false},{"name":"U.S. Steel Kosice Works","cc":"SK","GW":0.208,"MtCO2":0.82,"kind":"hard coal","is_RWE":false},{"name":"Tiefstack","cc":"DE","GW":0.205,"MtCO2":0.808,"kind":"hard coal","is_RWE":false},{"name":"Lodz-3","cc":"PL","GW":0.198,"MtCO2":0.781,"kind":"hard coal","is_RWE":false},{"name":"Trebovice","cc":"CZ","GW":0.177,"MtCO2":0.698,"kind":"hard coal","is_RWE":false},{"name":"Plzen CHP","cc":"CZ","GW":0.137,"MtCO2":0.69,"kind":"lignite","is_RWE":false},{"name":"Deven","cc":"BG","GW":0.174,"MtCO2":0.686,"kind":"hard coal","is_RWE":false},{"name":"Paroseni","cc":"RO","GW":0.15,"MtCO2":0.591,"kind":"hard coal","is_RWE":false},{"name":"GKH Hannover","cc":"DE","GW":0.15,"MtCO2":0.591,"kind":"hard coal","is_RWE":false},{"name":"Mainova West","cc":"DE","GW":0.144,"MtCO2":0.568,"kind":"hard coal","is_RWE":false},{"name":"Porici","cc":"CZ","GW":0.11,"MtCO2":0.554,"kind":"lignite","is_RWE":false},{"name":"Hodonin","cc":"CZ","GW":0.107,"MtCO2":0.539,"kind":"lignite","is_RWE":false},{"name":"Katowice PKE","cc":"PL","GW":0.135,"MtCO2":0.532,"kind":"hard coal","is_RWE":false},{"name":"Republika","cc":"BG","GW":0.105,"MtCO2":0.529,"kind":"lignite","is_RWE":false},{"name":"Pomorzany","cc":"PL","GW":0.134,"MtCO2":0.528,"kind":"hard coal","is_RWE":false},{"name":"Govora","cc":"RO","GW":0.1,"MtCO2":0.504,"kind":"lignite","is_RWE":false},{"name":"Te-Tol","cc":"SI","GW":0.124,"MtCO2":0.489,"kind":"hard coal","is_RWE":false},{"name":"Mondi Steti","cc":"CZ","GW":0.094,"MtCO2":0.473,"kind":"lignite","is_RWE":false},{"name":"Krefeld-Uerdingen","cc":"DE","GW":0.12,"MtCO2":0.473,"kind":"hard coal","is_RWE":false},{"name":"Swiecie Pulp Mill","cc":"PL","GW":0.113,"MtCO2":0.445,"kind":"hard coal","is_RWE":false},{"name":"Malesice","cc":"CZ","GW":0.11,"MtCO2":0.434,"kind":"hard coal","is_RWE":false},{"name":"Bialystok","cc":"PL","GW":0.11,"MtCO2":0.434,"kind":"hard coal","is_RWE":false},{"name":"ZW Nowa","cc":"PL","GW":0.105,"MtCO2":0.414,"kind":"hard coal","is_RWE":false},{"name":"Bielsko-Biala","cc":"PL","GW":0.105,"MtCO2":0.414,"kind":"hard coal","is_RWE":false},{"name":"Bydgoszcz","cc":"PL","GW":0.105,"MtCO2":0.414,"kind":"hard coal","is_RWE":false},{"name":"Berlin-Moabit","cc":"DE","GW":0.1,"MtCO2":0.394,"kind":"hard coal","is_RWE":false},{"name":"Goldenberg","cc":"DE","GW":0.076,"MtCO2":0.383,"kind":"lignite","is_RWE":true},{"name":"Pulawy ZAP Works","cc":"PL","GW":0.092,"MtCO2":0.363,"kind":"hard coal","is_RWE":false},{"name":"Plzenska energetika ELU III","cc":"CZ","GW":0.065,"MtCO2":0.327,"kind":"lignite","is_RWE":false},{"name":"Bedzin","cc":"PL","GW":0.082,"MtCO2":0.321,"kind":"hard coal","is_RWE":false},{"name":"Zofiowka Mine","cc":"PL","GW":0.081,"MtCO2":0.319,"kind":"hard coal","is_RWE":false},{"name":"Zabrze","cc":"PL","GW":0.075,"MtCO2":0.296,"kind":"hard coal","is_RWE":false},{"name":"Huerth Ville / Berrenrath","cc":"DE","GW":0.057,"MtCO2":0.287,"kind":"lignite","is_RWE":true},{"name":"Sko-Energo","cc":"CZ","GW":0.07,"MtCO2":0.276,"kind":"hard coal","is_RWE":false},{"name":"Szczecin","cc":"PL","GW":0.069,"MtCO2":0.272,"kind":"hard coal","is_RWE":false},{"name":"Tychy","cc":"PL","GW":0.065,"MtCO2":0.256,"kind":"hard coal","is_RWE":false},{"name":"Czestochowa CHP","cc":"PL","GW":0.064,"MtCO2":0.252,"kind":"hard coal","is_RWE":false},{"name":"Offenbach","cc":"DE","GW":0.06,"MtCO2":0.237,"kind":"hard coal","is_RWE":false},{"name":"Karvina","cc":"CZ","GW":0.055,"MtCO2":0.217,"kind":"hard coal","is_RWE":false},{"name":"Romerbrucke","cc":"DE","GW":0.053,"MtCO2":0.209,"kind":"hard coal","is_RWE":false},{"name":"Gdynia-3","cc":"PL","GW":0.053,"MtCO2":0.207,"kind":"hard coal","is_RWE":false},{"name":"Olomouc","cc":"CZ","GW":0.05,"MtCO2":0.197,"kind":"hard coal","is_RWE":false},{"name":"Kassel Kombi","cc":"DE","GW":0.038,"MtCO2":0.191,"kind":"lignite","is_RWE":false},{"name":"Pribram","cc":"CZ","GW":0.038,"MtCO2":0.191,"kind":"lignite","is_RWE":false},{"name":"Waehlitz","cc":"DE","GW":0.037,"MtCO2":0.188,"kind":"lignite","is_RWE":false},{"name":"Trinec-E3","cc":"CZ","GW":0.032,"MtCO2":0.161,"kind":"lignite","is_RWE":false},{"name":"Heinola Plant","cc":"FI","GW":0.039,"MtCO2":0.155,"kind":"hard coal","is_RWE":false},{"name":"Sliven","cc":"BG","GW":0.03,"MtCO2":0.151,"kind":"lignite","is_RWE":false},{"name":"Zlin","cc":"CZ","GW":0.03,"MtCO2":0.151,"kind":"lignite","is_RWE":false},{"name":"Gliwice Works","cc":"PL","GW":0.032,"MtCO2":0.126,"kind":"hard coal","is_RWE":false}],"coal":[{"label":"GKM 6","kind":"hard coal","coal_mw":112.0,"start":1975.0,"close_contract":2030.0,"close_reserve":2030.0,"corrected":false},{"label":"GKM 7","kind":"hard coal","coal_mw":190.0,"start":1982.0,"close_contract":2031.0,"close_reserve":2031.0,"corrected":false},{"label":"GKM 8","kind":"hard coal","coal_mw":192.0,"start":1993.0,"close_contract":2031.0,"close_reserve":2031.0,"corrected":false},{"label":"GKM 9","kind":"hard coal","coal_mw":364.8,"start":2015.0,"close_contract":2030.0,"close_reserve":2030.0,"corrected":false},{"label":"Goldenberg E","kind":"lignite","coal_mw":76.0,"start":1992.0,"close_contract":2030.0,"close_reserve":2030.0,"corrected":false},{"label":"Huerth Ville / Berrenrath","kind":"lignite","coal_mw":57.0,"start":1991.0,"close_contract":2030.0,"close_reserve":2030.0,"corrected":false},{"label":"Neurath F","kind":"lignite","coal_mw":1100.0,"start":2012.0,"close_contract":2030.0,"close_reserve":2033.0,"corrected":false},{"label":"Neurath G","kind":"lignite","coal_mw":1100.0,"start":2012.0,"close_contract":2030.0,"close_reserve":2033.0,"corrected":false},{"label":"Niederaussem G","kind":"lignite","coal_mw":630.0,"start":1974.0,"close_contract":2029.0,"close_reserve":2029.0,"corrected":false},{"label":"Niederaussem H","kind":"lignite","coal_mw":636.0,"start":1974.0,"close_contract":2030.0,"close_reserve":2030.0,"corrected":false},{"label":"Niederaussem K","kind":"lignite","coal_mw":1012.0,"start":2002.0,"close_contract":2030.0,"close_reserve":2033.0,"corrected":false},{"label":"Weisweiler G","kind":"lignite","coal_mw":630.0,"start":1974.0,"close_contract":2028.0,"close_reserve":2028.0,"corrected":false},{"label":"Weisweiler H","kind":"lignite","coal_mw":625.0,"start":1975.0,"close_contract":2029.0,"close_reserve":2029.0,"corrected":false},{"label":"Eemshaven 1","kind":"hard coal","coal_mw":600.0,"start":2015.0,"close_contract":2029.0,"close_reserve":2029.0,"corrected":true},{"label":"Eemshaven 2","kind":"hard coal","coal_mw":600.0,"start":2015.0,"close_contract":2029.0,"close_reserve":2029.0,"corrected":true}],"pipe":[{"name":"Caltanissetta (RWE) solar farm","tech":"solar","gw":0.055,"p_main":0.0,"p_full":0.0,"p_undated":0.2907,"is_off_ev":false,"is_con":false,"in_exit":false,"de_nl":false},{"name":"Caltanissetta (RWE) solar farm","tech":"solar","gw":0.08,"p_main":0.0,"p_full":0.0,"p_undated":0.5814,"is_off_ev":false,"is_con":false,"in_exit":false,"de_nl":false},{"name":"Florinas solar farm","tech":"solar","gw":0.02,"p_main":0.0,"p_full":0.0,"p_undated":0.5814,"is_off_ev":false,"is_con":false,"in_exit":false,"de_nl":false},{"name":"Ashorne solar farm","tech":"solar","gw":0.05,"p_main":0.0,"p_full":0.0,"p_undated":0.5814,"is_off_ev":false,"is_con":false,"in_exit":false,"de_nl":false},{"name":"Tween Bridge solar farm","tech":"solar","gw":0.6,"p_main":0.5814,"p_full":0.8,"p_undated":0.0,"is_off_ev":false,"is_con":false,"in_exit":true,"de_nl":false},{"name":"360 solar farm","tech":"solar","gw":0.026,"p_main":0.0,"p_full":0.0,"p_undated":0.5814,"is_off_ev":false,"is_con":false,"in_exit":false,"de_nl":false},{"name":"360 solar farm","tech":"solar","gw":0.026,"p_main":0.0,"p_full":0.0,"p_undated":0.5814,"is_off_ev":false,"is_con":false,"in_exit":false,"de_nl":false},{"name":"Switchgrass Solar","tech":"solar","gw":0.07,"p_main":0.2907,"p_full":0.8,"p_undated":0.0,"is_off_ev":false,"is_con":false,"in_exit":true,"de_nl":false},{"name":"Union Ridge Solar","tech":"solar","gw":0.108,"p_main":0.95,"p_full":0.98,"p_undated":0.0,"is_off_ev":false,"is_con":true,"in_exit":true,"de_nl":false},{"name":"Campbells Bridge wind farm","tech":"onshore","gw":1.0,"p_main":0.2775,"p_full":0.8,"p_undated":0.0,"is_off_ev":false,"is_con":false,"in_exit":true,"de_nl":false},{"name":"Cattle Creek wind farm","tech":"onshore","gw":1.0,"p_main":0.555,"p_full":0.8,"p_undated":0.0,"is_off_ev":false,"is_con":false,"in_exit":true,"de_nl":false},{"name":"Southern Queensland wind farm","tech":"onshore","gw":0.72,"p_main":0.2775,"p_full":0.8,"p_undated":0.0,"is_off_ev":false,"is_con":false,"in_exit":true,"de_nl":false},{"name":"Vientos Magallanicos wind farm","tech":"onshore","gw":1.17,"p_main":0.0,"p_full":0.0,"p_undated":0.555,"is_off_ev":false,"is_con":false,"in_exit":false,"de_nl":false},{"name":"Thor Offshore wind farm","tech":"offshore","gw":0.51,"p_main":0.95,"p_full":0.98,"p_undated":0.0,"is_off_ev":true,"is_con":false,"in_exit":true,"de_nl":false},{"name":"Ailes du G\u00e2tinais wind farm","tech":"onshore","gw":0.0171,"p_main":0.0,"p_full":0.0,"p_undated":0.555,"is_off_ev":false,"is_con":false,"in_exit":false,"de_nl":false},{"name":"Athienville wind farm","tech":"onshore","gw":0.0177,"p_main":0.0,"p_full":0.0,"p_undated":0.555,"is_off_ev":false,"is_con":false,"in_exit":false,"de_nl":false},{"name":"Balinot wind farm","tech":"onshore","gw":0.0216,"p_main":0.0,"p_full":0.0,"p_undated":0.555,"is_off_ev":false,"is_con":false,"in_exit":false,"de_nl":false},{"name":"Ban Saint-Jean wind farm","tech":"onshore","gw":0.011,"p_main":0.0,"p_full":0.0,"p_undated":0.555,"is_off_ev":false,"is_con":false,"in_exit":false,"de_nl":false},{"name":"Baumes wind farm","tech":"onshore","gw":0.013,"p_main":0.0,"p_full":0.0,"p_undated":0.555,"is_off_ev":false,"is_con":false,"in_exit":false,"de_nl":false},{"name":"Beg Ar C'Hra wind farm","tech":"onshore","gw":0.0147,"p_main":0.95,"p_full":0.98,"p_undated":0.0,"is_off_ev":false,"is_con":true,"in_exit":true,"de_nl":false},{"name":"Canny wind farm","tech":"onshore","gw":0.0285,"p_main":0.0,"p_full":0.0,"p_undated":0.555,"is_off_ev":false,"is_con":false,"in_exit":false,"de_nl":false},{"name":"Chapelle-Sur-Chezy wind farm","tech":"onshore","gw":0.0228,"p_main":0.0,"p_full":0.0,"p_undated":0.555,"is_off_ev":false,"is_con":false,"in_exit":false,"de_nl":false},{"name":"Chemin de Ch\u00e2lons wind farm","tech":"onshore","gw":0.011,"p_main":0.0,"p_full":0.0,"p_undated":0.555,"is_off_ev":false,"is_con":false,"in_exit":false,"de_nl":false},{"name":"Chemin de Saint-Gilles wind farm","tech":"onshore","gw":0.012,"p_main":0.0,"p_full":0.0,"p_undated":0.555,"is_off_ev":false,"is_con":false,"in_exit":false,"de_nl":false},{"name":"Cinq Poiriers wind farm","tech":"onshore","gw":0.019,"p_main":0.0,"p_full":0.0,"p_undated":0.555,"is_off_ev":false,"is_con":false,"in_exit":false,"de_nl":false},{"name":"Croix Blanche wind farm","tech":"onshore","gw":0.012,"p_main":0.0,"p_full":0.0,"p_undated":0.555,"is_off_ev":false,"is_con":false,"in_exit":false,"de_nl":false},{"name":"Langonnet wind farm","tech":"onshore","gw":0.012,"p_main":0.0,"p_full":0.0,"p_undated":0.555,"is_off_ev":false,"is_con":false,"in_exit":false,"de_nl":false},{"name":"Les Pressoirs wind farm","tech":"onshore","gw":0.0285,"p_main":0.0,"p_full":0.0,"p_undated":0.555,"is_off_ev":false,"is_con":false,"in_exit":false,"de_nl":false},{"name":"Mesbrecourt-Richecourt wind farm","tech":"onshore","gw":0.016,"p_main":0.0,"p_full":0.0,"p_undated":0.555,"is_off_ev":false,"is_con":false,"in_exit":false,"de_nl":false},{"name":"Mont Hellet wind farm","tech":"onshore","gw":0.013,"p_main":0.0,"p_full":0.0,"p_undated":0.555,"is_off_ev":false,"is_con":false,"in_exit":false,"de_nl":false},{"name":"Mont Herbe wind farm","tech":"onshore","gw":0.013,"p_main":0.0,"p_full":0.0,"p_undated":0.555,"is_off_ev":false,"is_con":false,"in_exit":false,"de_nl":false},{"name":"Morgat wind farm","tech":"onshore","gw":0.0118,"p_main":0.0,"p_full":0.0,"p_undated":0.555,"is_off_ev":false,"is_con":false,"in_exit":false,"de_nl":false},{"name":"Nuisement Sur Coole wind farm","tech":"onshore","gw":0.063,"p_main":0.0,"p_full":0.0,"p_undated":0.2775,"is_off_ev":false,"is_con":false,"in_exit":false,"de_nl":false},{"name":"Paz'Eole wind farm","tech":"onshore","gw":0.011,"p_main":0.0,"p_full":0.0,"p_undated":0.555,"is_off_ev":false,"is_con":false,"in_exit":false,"de_nl":false},{"name":"Pierre-Morains et Val-des-Marais wind farm","tech":"onshore","gw":0.022,"p_main":0.0,"p_full":0.0,"p_undated":0.555,"is_off_ev":false,"is_con":false,"in_exit":false,"de_nl":false},{"name":"Quatre Jallois wind farm","tech":"onshore","gw":0.0207,"p_main":0.0,"p_full":0.0,"p_undated":0.555,"is_off_ev":false,"is_con":false,"in_exit":false,"de_nl":false},{"name":"Raisinieres wind farm","tech":"onshore","gw":0.023,"p_main":0.0,"p_full":0.0,"p_undated":0.555,"is_off_ev":false,"is_con":false,"in_exit":false,"de_nl":false},{"name":"Saint-Maur-sur-le-Loir wind farm","tech":"onshore","gw":0.033,"p_main":0.0,"p_full":0.0,"p_undated":0.555,"is_off_ev":false,"is_con":false,"in_exit":false,"de_nl":false},{"name":"Saint-Ouen-le-Mauger wind farm","tech":"onshore","gw":0.0285,"p_main":0.0,"p_full":0.0,"p_undated":0.555,"is_off_ev":false,"is_con":false,"in_exit":false,"de_nl":false},{"name":"Saint-Vaast-d'Equiqueville wind farm","tech":"onshore","gw":0.0171,"p_main":0.0,"p_full":0.0,"p_undated":0.555,"is_off_ev":false,"is_con":false,"in_exit":false,"de_nl":false},{"name":"Senan wind farm","tech":"onshore","gw":0.0354,"p_main":0.0,"p_full":0.0,"p_undated":0.555,"is_off_ev":false,"is_con":false,"in_exit":false,"de_nl":false},{"name":"Soudron Et Cheniers wind farm","tech":"onshore","gw":0.034,"p_main":0.0,"p_full":0.0,"p_undated":0.555,"is_off_ev":false,"is_con":false,"in_exit":false,"de_nl":false},{"name":"Vall\u00e9e de l\u2019Eaulne wind farm","tech":"onshore","gw":0.0399,"p_main":0.0,"p_full":0.0,"p_undated":0.555,"is_off_ev":false,"is_con":false,"in_exit":false,"de_nl":false},{"name":"Delta Nordsee wind farm","tech":"offshore","gw":0.2448,"p_main":0.85,"p_full":0.98,"p_undated":0.0,"is_off_ev":true,"is_con":false,"in_exit":true,"de_nl":true},{"name":"Nordsee 1 wind farm","tech":"offshore","gw":0.1148,"p_main":0.95,"p_full":0.98,"p_undated":0.0,"is_off_ev":true,"is_con":false,"in_exit":true,"de_nl":true},{"name":"Nordsee 2 wind farm","tech":"offshore","gw":0.2218,"p_main":0.95,"p_full":0.98,"p_undated":0.0,"is_off_ev":true,"is_con":false,"in_exit":true,"de_nl":true},{"name":"Nordsee 3 wind farm","tech":"offshore","gw":0.2142,"p_main":0.85,"p_full":0.98,"p_undated":0.0,"is_off_ev":true,"is_con":false,"in_exit":true,"de_nl":true},{"name":"Dublin Array offshore wind farm","tech":"offshore","gw":0.412,"p_main":0.0,"p_full":0.8,"p_undated":0.0,"is_off_ev":false,"is_con":false,"in_exit":true,"de_nl":false},{"name":"Lyrenacarriga wind farm","tech":"onshore","gw":0.0425,"p_main":0.0,"p_full":0.0,"p_undated":0.555,"is_off_ev":false,"is_con":false,"in_exit":false,"de_nl":false},{"name":"Oranje Offshore wind farm","tech":"offshore","gw":0.38,"p_main":0.95,"p_full":0.98,"p_undated":0.0,"is_off_ev":true,"is_con":false,"in_exit":true,"de_nl":true},{"name":"S\u00f8nnavind wind farm","tech":"offshore","gw":0.1687,"p_main":0.0,"p_full":0.8,"p_undated":0.0,"is_off_ev":false,"is_con":false,"in_exit":true,"de_nl":false},{"name":"Sharco Duo Offshore wind farm","tech":"offshore","gw":1.8,"p_main":0.0,"p_full":0.8,"p_undated":0.0,"is_off_ev":false,"is_con":false,"in_exit":true,"de_nl":false},{"name":"Bakio wind farm","tech":"onshore","gw":0.02,"p_main":0.0,"p_full":0.0,"p_undated":0.555,"is_off_ev":false,"is_con":false,"in_exit":false,"de_nl":false},{"name":"Sollube wind farm","tech":"onshore","gw":0.026,"p_main":0.0,"p_full":0.0,"p_undated":0.555,"is_off_ev":false,"is_con":false,"in_exit":false,"de_nl":false},{"name":"Gr\u00e4s\u00e5s wind farm","tech":"onshore","gw":0.04,"p_main":0.0,"p_full":0.0,"p_undated":0.555,"is_off_ev":false,"is_con":false,"in_exit":false,"de_nl":false},{"name":"K\u00e4llmyrberget wind farm","tech":"onshore","gw":0.132,"p_main":0.0,"p_full":0.0,"p_undated":0.555,"is_off_ev":false,"is_con":false,"in_exit":false,"de_nl":false},{"name":"Brochloch Rig wind farm","tech":"onshore","gw":0.0248,"p_main":0.0,"p_full":0.0,"p_undated":0.555,"is_off_ev":false,"is_con":false,"in_exit":false,"de_nl":false},{"name":"Fforch Nest wind farm","tech":"onshore","gw":0.035,"p_main":0.0,"p_full":0.0,"p_undated":0.555,"is_off_ev":false,"is_con":false,"in_exit":false,"de_nl":false},{"name":"Hill Of Stroupster wind farm","tech":"onshore","gw":0.066,"p_main":0.0,"p_full":0.0,"p_undated":0.555,"is_off_ev":false,"is_con":false,"in_exit":false,"de_nl":false},{"name":"Sofia wind farm","tech":"offshore","gw":1.4,"p_main":0.95,"p_full":0.98,"p_undated":0.0,"is_off_ev":true,"is_con":false,"in_exit":true,"de_nl":false},{"name":"Baron Winds Farm","tech":"onshore","gw":0.113,"p_main":0.95,"p_full":0.98,"p_undated":0.0,"is_off_ev":false,"is_con":true,"in_exit":true,"de_nl":false},{"name":"Forest Creek Wind Project","tech":"onshore","gw":0.127,"p_main":0.95,"p_full":0.98,"p_undated":0.0,"is_off_ev":false,"is_con":true,"in_exit":true,"de_nl":false},{"name":"Forged Ethic Wind Energy Project","tech":"onshore","gw":0.323,"p_main":0.0,"p_full":0.0,"p_undated":0.555,"is_off_ev":false,"is_con":false,"in_exit":false,"de_nl":false},{"name":"Honey Mesquite wind farm","tech":"onshore","gw":0.181,"p_main":0.2775,"p_full":0.8,"p_undated":0.0,"is_off_ev":false,"is_con":false,"in_exit":true,"de_nl":false},{"name":"Roscoe Wind Farm Project","tech":"onshore","gw":0.1456,"p_main":0.95,"p_full":0.98,"p_undated":0.0,"is_off_ev":false,"is_con":true,"in_exit":true,"de_nl":false},{"name":"Silo Bend wind farm","tech":"onshore","gw":0.15,"p_main":0.555,"p_full":0.8,"p_undated":0.0,"is_off_ev":false,"is_con":false,"in_exit":true,"de_nl":false},{"name":"Norfolk Vanguard West","tech":"offshore","gw":0.7,"p_main":0.6,"p_full":0.9,"p_undated":0.0,"is_off_ev":true,"is_con":false,"in_exit":true,"de_nl":false},{"name":"Norfolk Vanguard East","tech":"offshore","gw":0.7,"p_main":0.6,"p_full":0.9,"p_undated":0.0,"is_off_ev":true,"is_con":false,"in_exit":false,"de_nl":false}],"hist":[{"year":2005,"capacity_GW":0.484,"additions_GW":0.031,"additions_adj_GW":0.048},{"year":2006,"capacity_GW":0.695,"additions_GW":0.21,"additions_adj_GW":0.326},{"year":2007,"capacity_GW":1.008,"additions_GW":0.313,"additions_adj_GW":0.485},{"year":2008,"capacity_GW":1.507,"additions_GW":0.499,"additions_adj_GW":0.774},{"year":2009,"capacity_GW":2.843,"additions_GW":1.336,"additions_adj_GW":2.072},{"year":2010,"capacity_GW":3.2,"additions_GW":0.358,"additions_adj_GW":0.555},{"year":2011,"capacity_GW":3.63,"additions_GW":0.429,"additions_adj_GW":0.666},{"year":2012,"capacity_GW":3.931,"additions_GW":0.301,"additions_adj_GW":0.466},{"year":2013,"capacity_GW":4.098,"additions_GW":0.167,"additions_adj_GW":0.259},{"year":2014,"capacity_GW":4.36,"additions_GW":0.263,"additions_adj_GW":0.408},{"year":2015,"capacity_GW":5.333,"additions_GW":0.973,"additions_adj_GW":1.508},{"year":2016,"capacity_GW":5.658,"additions_GW":0.325,"additions_adj_GW":0.504},{"year":2017,"capacity_GW":6.633,"additions_GW":0.975,"additions_adj_GW":1.512},{"year":2018,"capacity_GW":6.829,"additions_GW":0.196,"additions_adj_GW":0.304},{"year":2019,"capacity_GW":7.243,"additions_GW":0.672,"additions_adj_GW":1.042},{"year":2020,"capacity_GW":7.747,"additions_GW":0.505,"additions_adj_GW":0.783},{"year":2021,"capacity_GW":8.663,"additions_GW":1.129,"additions_adj_GW":1.751},{"year":2022,"capacity_GW":10.607,"additions_GW":1.961,"additions_adj_GW":3.041},{"year":2023,"capacity_GW":11.285,"additions_GW":0.678,"additions_adj_GW":1.051},{"year":2024,"capacity_GW":11.607,"additions_GW":0.356,"additions_adj_GW":0.552},{"year":2025,"capacity_GW":12.637,"additions_GW":1.041,"additions_adj_GW":1.615}],"country":[{"country":"Poland","coal_GW":26.461,"coal_TWh":115.899,"pipeline_GW_dated":10.893,"exp_new_RE_TWh":8.464,"gap_TWh":-107.435,"ratio":0.073},{"country":"Germany","coal_GW":27.802,"coal_TWh":121.773,"pipeline_GW_dated":23.368,"exp_new_RE_TWh":20.818,"gap_TWh":-100.955,"ratio":0.171},{"country":"Czech Republic","coal_GW":6.914,"coal_TWh":30.282,"pipeline_GW_dated":0.082,"exp_new_RE_TWh":0.165,"gap_TWh":-30.117,"ratio":0.005},{"country":"Bulgaria","coal_GW":3.425,"coal_TWh":15.001,"pipeline_GW_dated":1.007,"exp_new_RE_TWh":1.007,"gap_TWh":-13.995,"ratio":0.067},{"country":"Netherlands","coal_GW":3.5,"coal_TWh":15.33,"pipeline_GW_dated":9.807,"exp_new_RE_TWh":4.507,"gap_TWh":-10.823,"ratio":0.294},{"country":"Romania","coal_GW":2.2,"coal_TWh":9.636,"pipeline_GW_dated":3.202,"exp_new_RE_TWh":4.888,"gap_TWh":-4.748,"ratio":0.507},{"country":"Hungary","coal_GW":0.884,"coal_TWh":3.872,"pipeline_GW_dated":0.427,"exp_new_RE_TWh":0.246,"gap_TWh":-3.626,"ratio":0.063},{"country":"Slovenia","coal_GW":0.724,"coal_TWh":3.171,"pipeline_GW_dated":0.283,"exp_new_RE_TWh":0.159,"gap_TWh":-3.012,"ratio":0.05},{"country":"Italy","coal_GW":1.23,"coal_TWh":5.387,"pipeline_GW_dated":5.645,"exp_new_RE_TWh":3.396,"gap_TWh":-1.992,"ratio":0.63},{"country":"France","coal_GW":1.907,"coal_TWh":8.353,"pipeline_GW_dated":7.877,"exp_new_RE_TWh":8.323,"gap_TWh":-0.03,"ratio":0.996},{"country":"Greece","coal_GW":0.66,"coal_TWh":2.891,"pipeline_GW_dated":1.139,"exp_new_RE_TWh":10.09,"gap_TWh":7.2,"ratio":3.491},{"country":"Finland","coal_GW":0.653,"coal_TWh":2.861,"pipeline_GW_dated":28.733,"exp_new_RE_TWh":29.342,"gap_TWh":26.481,"ratio":10.256}],"peers":[{"company":"PGE","units_in_Europe":138,"parent_coverage":0.703,"coal_GW":11.808,"gas_GW":2.303,"wind_solar_GW":0.856,"exp_new_RE_TWh":0.781,"coal_TWh":51.721,"gap_TWh":-50.939,"ratio":0.015},{"company":"RWE","units_in_Europe":430,"parent_coverage":0.333,"coal_GW":7.925,"gas_GW":15.177,"wind_solar_GW":5.967,"exp_new_RE_TWh":6.286,"coal_TWh":34.711,"gap_TWh":-28.425,"ratio":0.181},{"company":"ENEA","units_in_Europe":38,"parent_coverage":0.842,"coal_GW":5.761,"gas_GW":0.008,"wind_solar_GW":0.111,"exp_new_RE_TWh":0.0,"coal_TWh":25.233,"gap_TWh":-25.233,"ratio":0.0},{"company":"EnBW","units_in_Europe":158,"parent_coverage":0.285,"coal_GW":5.591,"gas_GW":1.93,"wind_solar_GW":2.204,"exp_new_RE_TWh":3.931,"coal_TWh":24.487,"gap_TWh":-20.556,"ratio":0.161},{"company":"LEAG / EPH","units_in_Europe":164,"parent_coverage":0.915,"coal_GW":5.021,"gas_GW":12.503,"wind_solar_GW":0.114,"exp_new_RE_TWh":0.663,"coal_TWh":21.993,"gap_TWh":-21.33,"ratio":0.03},{"company":"TAURON","units_in_Europe":79,"parent_coverage":0.722,"coal_GW":4.424,"gas_GW":0.304,"wind_solar_GW":0.569,"exp_new_RE_TWh":0.216,"coal_TWh":19.375,"gap_TWh":-19.159,"ratio":0.011},{"company":"CEZ","units_in_Europe":79,"parent_coverage":0.62,"coal_GW":2.997,"gas_GW":0.897,"wind_solar_GW":0.135,"exp_new_RE_TWh":0.087,"coal_TWh":13.127,"gap_TWh":-13.039,"ratio":0.007},{"company":"Uniper","units_in_Europe":121,"parent_coverage":0.711,"coal_GW":2.393,"gas_GW":10.035,"wind_solar_GW":0.0,"exp_new_RE_TWh":0.221,"coal_TWh":10.481,"gap_TWh":-10.261,"ratio":0.021},{"company":"EDF","units_in_Europe":507,"parent_coverage":0.15,"coal_GW":1.26,"gas_GW":5.437,"wind_solar_GW":3.887,"exp_new_RE_TWh":2.646,"coal_TWh":5.519,"gap_TWh":-2.873,"ratio":0.48},{"company":"Enel (incl. Endesa)","units_in_Europe":695,"parent_coverage":0.265,"coal_GW":0.85,"gas_GW":15.759,"wind_solar_GW":6.998,"exp_new_RE_TWh":4.114,"coal_TWh":3.723,"gap_TWh":0.391,"ratio":1.105},{"company":"Fortum","units_in_Europe":96,"parent_coverage":0.26,"coal_GW":0.753,"gas_GW":0.319,"wind_solar_GW":0.58,"exp_new_RE_TWh":0.061,"coal_TWh":3.298,"gap_TWh":-3.237,"ratio":0.019},{"company":"Engie","units_in_Europe":370,"parent_coverage":0.303,"coal_GW":0.027,"gas_GW":13.511,"wind_solar_GW":3.568,"exp_new_RE_TWh":1.328,"coal_TWh":0.118,"gap_TWh":1.209,"ratio":null},{"company":"Iberdrola","units_in_Europe":530,"parent_coverage":0.074,"coal_GW":0.0,"gas_GW":5.793,"wind_solar_GW":14.036,"exp_new_RE_TWh":11.406,"coal_TWh":0.0,"gap_TWh":11.406,"ratio":null},{"company":"Orsted","units_in_Europe":101,"parent_coverage":0.228,"coal_GW":0.0,"gas_GW":0.16,"wind_solar_GW":5.014,"exp_new_RE_TWh":2.793,"coal_TWh":0.0,"gap_TWh":2.793,"ratio":null},{"company":"Vattenfall","units_in_Europe":187,"parent_coverage":0.171,"coal_GW":0.0,"gas_GW":2.401,"wind_solar_GW":5.326,"exp_new_RE_TWh":5.7,"coal_TWh":0.0,"gap_TWh":5.7,"ratio":null},{"company":"EDP","units_in_Europe":266,"parent_coverage":0.098,"coal_GW":0.0,"gas_GW":3.145,"wind_solar_GW":3.544,"exp_new_RE_TWh":0.0,"coal_TWh":0.0,"gap_TWh":0.0,"ratio":null}],"scenarios":[{"scenario":"Current plan","basis":"GEM","new_GW_median":5.7586,"new_GW_p05":3.5543,"new_GW_p95":7.8639,"ratio_median":0.5119,"ratio_p05":0.3088,"ratio_p95":0.722,"P(ratio>=1)":0.0002,"implied_pace_GW_yr":1.1517},{"scenario":"Full delivery","basis":"GEM","new_GW_median":12.215,"new_GW_p05":8.4873,"new_GW_p95":13.8147,"ratio_median":1.0173,"ratio_p05":0.6988,"ratio_p95":1.3192,"P(ratio>=1)":0.5418,"implied_pace_GW_yr":2.443},{"scenario":"Track record","basis":"GEM","new_GW_median":3.8374,"new_GW_p05":2.2515,"new_GW_p95":5.8658,"ratio_median":0.3374,"ratio_p05":0.195,"ratio_p95":0.5438,"P(ratio>=1)":0.0,"implied_pace_GW_yr":0.7675},{"scenario":"Current plan","basis":"adjusted","new_GW_median":6.8233,"new_GW_p05":3.9434,"new_GW_p95":9.9552,"ratio_median":0.5743,"ratio_p05":0.3428,"ratio_p95":0.843,"P(ratio>=1)":0.007,"implied_pace_GW_yr":1.3647},{"scenario":"Full delivery","basis":"adjusted","new_GW_median":15.4689,"new_GW_p05":10.4798,"new_GW_p95":17.642,"ratio_median":1.2195,"ratio_p05":0.8363,"ratio_p95":1.5968,"P(ratio>=1)":0.8326,"implied_pace_GW_yr":3.0938},{"scenario":"Track record","basis":"adjusted","new_GW_median":5.9511,"new_GW_p05":3.4917,"new_GW_p95":9.0968,"ratio_median":0.5232,"ratio_p05":0.3024,"ratio_p95":0.8433,"P(ratio>=1)":0.01,"implied_pace_GW_yr":1.1902}],"gap":[{"scenario":"Track record","coal case":"contract 2030","emissions_Mt":26.9538,"generation_TWh":116.6526,"intensity_t_MWh":0.2312,"intensity_p05":0.2165,"intensity_p95":0.2438,"P(on track)":0.0,"target":0.159,"status":"off track"},{"scenario":"Track record","coal case":"reserve to 2033 (dispatched at 10%)","emissions_Mt":29.9483,"generation_TWh":119.2538,"intensity_t_MWh":0.2513,"intensity_p05":0.2356,"intensity_p95":0.2646,"P(on track)":0.0,"target":0.159,"status":"off track"},{"scenario":"Track record","coal case":"reserve to 2033 (worst case, runs like today)","emissions_Mt":41.9267,"generation_TWh":129.6907,"intensity_t_MWh":0.3235,"intensity_p05":0.3048,"intensity_p95":0.3393,"P(on track)":0.0,"target":0.159,"status":"off track"},{"scenario":"Current plan","coal case":"contract 2030","emissions_Mt":26.9538,"generation_TWh":122.2497,"intensity_t_MWh":0.2205,"intensity_p05":0.2075,"intensity_p95":0.2355,"P(on track)":0.0,"target":0.159,"status":"off track"},{"scenario":"Current plan","coal case":"reserve to 2033 (dispatched at 10%)","emissions_Mt":29.9483,"generation_TWh":124.8426,"intensity_t_MWh":0.2399,"intensity_p05":0.226,"intensity_p95":0.2558,"P(on track)":0.0,"target":0.159,"status":"off track"},{"scenario":"Current plan","coal case":"reserve to 2033 (worst case, runs like today)","emissions_Mt":41.9267,"generation_TWh":135.2574,"intensity_t_MWh":0.3099,"intensity_p05":0.2934,"intensity_p95":0.3289,"P(on track)":0.0,"target":0.159,"status":"off track"},{"scenario":"Full delivery","coal case":"contract 2030","emissions_Mt":26.9538,"generation_TWh":139.0179,"intensity_t_MWh":0.194,"intensity_p05":0.1815,"intensity_p95":0.2102,"P(on track)":0.0,"target":0.159,"status":"off track"},{"scenario":"Full delivery","coal case":"reserve to 2033 (dispatched at 10%)","emissions_Mt":29.9483,"generation_TWh":141.6188,"intensity_t_MWh":0.2116,"intensity_p05":0.1982,"intensity_p95":0.2289,"P(on track)":0.0,"target":0.159,"status":"off track"},{"scenario":"Full delivery","coal case":"reserve to 2033 (worst case, runs like today)","emissions_Mt":41.9267,"generation_TWh":151.9838,"intensity_t_MWh":0.2759,"intensity_p05":0.2596,"intensity_p95":0.2968,"P(on track)":0.0,"target":0.159,"status":"off track"}],"calib":[{"year":2019,"modelled_Mt":102.78,"modelled_TWh":132.62,"reported_Mt":91.7,"fitted_Mt":95.06,"residual_Mt":-3.36},{"year":2021,"modelled_Mt":91.7,"modelled_TWh":120.63,"reported_Mt":86.9,"fitted_Mt":84.81,"residual_Mt":2.09},{"year":2022,"modelled_Mt":77.74,"modelled_TWh":107.22,"reported_Mt":85.4,"fitted_Mt":71.9,"residual_Mt":13.5},{"year":2023,"modelled_Mt":76.01,"modelled_TWh":106.15,"reported_Mt":61.9,"fitted_Mt":70.3,"residual_Mt":-8.4},{"year":2025,"modelled_Mt":60.7,"modelled_TWh":92.31,"reported_Mt":51.9,"fitted_Mt":56.14,"residual_Mt":-4.24}],"paths":[{"scenario":"Track record","case":"contract 2030","year":2026,"Mt":55.231},{"scenario":"Track record","case":"contract 2030","year":2027,"Mt":55.231},{"scenario":"Track record","case":"contract 2030","year":2028,"Mt":52.296},{"scenario":"Track record","case":"contract 2030","year":2029,"Mt":42.074},{"scenario":"Track record","case":"contract 2030","year":2030,"Mt":26.936},{"scenario":"Track record","case":"reserve to 2033 (dispatched at 10%)","year":2026,"Mt":55.231},{"scenario":"Track record","case":"reserve to 2033 (dispatched at 10%)","year":2027,"Mt":55.231},{"scenario":"Track record","case":"reserve to 2033 (dispatched at 10%)","year":2028,"Mt":52.296},{"scenario":"Track record","case":"reserve to 2033 (dispatched at 10%)","year":2029,"Mt":42.074},{"scenario":"Track record","case":"reserve to 2033 (dispatched at 10%)","year":2030,"Mt":29.929},{"scenario":"Current plan","case":"contract 2030","year":2026,"Mt":55.231},{"scenario":"Current plan","case":"contract 2030","year":2027,"Mt":55.231},{"scenario":"Current plan","case":"contract 2030","year":2028,"Mt":52.296},{"scenario":"Current plan","case":"contract 2030","year":2029,"Mt":42.074},{"scenario":"Current plan","case":"contract 2030","year":2030,"Mt":26.936},{"scenario":"Current plan","case":"reserve to 2033 (dispatched at 10%)","year":2026,"Mt":55.231},{"scenario":"Current plan","case":"reserve to 2033 (dispatched at 10%)","year":2027,"Mt":55.231},{"scenario":"Current plan","case":"reserve to 2033 (dispatched at 10%)","year":2028,"Mt":52.296},{"scenario":"Current plan","case":"reserve to 2033 (dispatched at 10%)","year":2029,"Mt":42.074},{"scenario":"Current plan","case":"reserve to 2033 (dispatched at 10%)","year":2030,"Mt":29.929},{"scenario":"Full delivery","case":"contract 2030","year":2026,"Mt":55.231},{"scenario":"Full delivery","case":"contract 2030","year":2027,"Mt":55.231},{"scenario":"Full delivery","case":"contract 2030","year":2028,"Mt":52.296},{"scenario":"Full delivery","case":"contract 2030","year":2029,"Mt":42.074},{"scenario":"Full delivery","case":"contract 2030","year":2030,"Mt":26.936},{"scenario":"Full delivery","case":"reserve to 2033 (dispatched at 10%)","year":2026,"Mt":55.231},{"scenario":"Full delivery","case":"reserve to 2033 (dispatched at 10%)","year":2027,"Mt":55.231},{"scenario":"Full delivery","case":"reserve to 2033 (dispatched at 10%)","year":2028,"Mt":52.296},{"scenario":"Full delivery","case":"reserve to 2033 (dispatched at 10%)","year":2029,"Mt":42.074},{"scenario":"Full delivery","case":"reserve to 2033 (dispatched at 10%)","year":2030,"Mt":29.929}],"evidence":[{"name":"Delta Nordsee wind farm","evidence":"Nordseecluster B, foundations in production, COD early 2029","source":"RWE, 31 Aug 2026","GW_equity":0.245,"COD":2029.0,"p_main":0.85},{"name":"Nordsee 1 wind farm","evidence":"Nordseecluster A, under construction, first power Jul 2026","source":"RWE, 31 Aug 2026","GW_equity":0.115,"COD":2027.0,"p_main":0.95},{"name":"Nordsee 2 wind farm","evidence":"Nordseecluster A, under construction, first power Jul 2026","source":"RWE, 31 Aug 2026","GW_equity":0.222,"COD":2027.0,"p_main":0.95},{"name":"Nordsee 3 wind farm","evidence":"Nordseecluster B, foundations in production, COD early 2029","source":"RWE, 31 Aug 2026","GW_equity":0.214,"COD":2029.0,"p_main":0.85},{"name":"Norfolk Vanguard East","evidence":"AR7 CfD (Jan 2026); Vestas turbines contracted (Feb-Mar 2026); FID targeted summer 2026, no public confirmation found as of 8 Nov 2026; KKR 50%","source":"RWE, 14 Jan, 20 Feb and 10 Mar 2026","GW_equity":0.7,"COD":2030.0,"p_main":0.6},{"name":"Norfolk Vanguard West","evidence":"AR7 CfD (Jan 2026); Vestas turbines contracted (Feb-Mar 2026); FID targeted summer 2026, no public confirmation found as of 8 Nov 2026; KKR 50%","source":"RWE, 14 Jan, 20 Feb and 10 Mar 2026","GW_equity":0.7,"COD":2029.0,"p_main":0.6},{"name":"Oranje Offshore wind farm","evidence":"OranjeWind, under construction (RWE 50%, TotalEnergies 50%)","source":"RWE, 31 Aug 2026","GW_equity":0.38,"COD":2027.0,"p_main":0.95},{"name":"Sofia wind farm","evidence":"under construction","source":"RWE press release, 31 Aug 2026","GW_equity":1.4,"COD":2026.0,"p_main":0.95},{"name":"Thor Offshore wind farm","evidence":"under construction (RWE 51%, NBIM 49%)","source":"RWE, 4 Jun 2025","GW_equity":0.51,"COD":2027.0,"p_main":0.95}]};
+const P = DATA.params;
+const H = P.H_YEAR;
+
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const fmt = (x, d = 2) => Number(x).toFixed(d);
+const pct = x => Math.round(100 * x) + "%";
+const r05 = p => (Math.round(p * 20) / 20).toFixed(2);
+function T() {
+  return { ink: css("--ink"), ink2: css("--ink-2"), muted: css("--muted"), line: css("--line"), panel: css("--panel"),
+    accent: css("--accent"), coal: css("--coal"), coal2: css("--coal-2"), track: css("--s-track"), plan: css("--s-plan"),
+    full: css("--s-full"), bad: css("--bad"), good: css("--good") };
+}
+const SC = () => { const t = T(); return { "Track record": t.track, "Current plan": t.plan, "Full delivery": t.full }; };
+function layout(extra = {}) {
+  const t = T();
+  const base = {
+    paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)",
+    font: { family: "Public Sans, Segoe UI, Arial, sans-serif", size: 12, color: t.ink2 },
+    margin: { l: 56, r: 16, t: 16, b: 44 }, showlegend: false,
+    xaxis: { gridcolor: t.line, zerolinecolor: t.line, linecolor: t.ink2, tickfont: { color: t.ink2 } },
+    yaxis: { gridcolor: t.line, zerolinecolor: t.line, linecolor: t.ink2, tickfont: { color: t.ink2 } },
+    hoverlabel: { bgcolor: t.panel, bordercolor: t.line, font: { color: t.ink, family: "IBM Plex Mono, monospace" } },
+    legend: { orientation: "h", y: 1.14, font: { color: t.ink2 } },
+  };
+  for (const k in extra) base[k] = (typeof extra[k] === "object" && !Array.isArray(extra[k]) && base[k]) ? Object.assign({}, base[k], extra[k]) : extra[k];
+  return base;
+}
+const CFG = { displayModeBar: false, responsive: true };
+const NARROW = () => window.innerWidth < 600;
+function draw(id, traces, lay) { if (window.Plotly) Plotly.react(id, traces, lay, CFG); }
+
+/* seeded random numbers, normal cdf */
+function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function gauss(r) { let u = 0, v = 0; while (u === 0) u = r(); while (v === 0) v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
+function ncdf(x) { const t = 1 / (1 + 0.2316419 * Math.abs(x)), d = 0.3989423 * Math.exp(-x * x / 2);
+  const p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274)))); return x > 0 ? 1 - p : p; }
+function tri(lo, mo, hi, r) { const u = r(), f = (mo - lo) / (hi - lo); return u < f ? lo + Math.sqrt(u * (hi - lo) * (mo - lo)) : hi - Math.sqrt((1 - u) * (hi - lo) * (hi - mo)); }
+function quant(arr, q) { const s = Float64Array.from(arr).sort(); const i = (s.length - 1) * q, lo = Math.floor(i), hi = Math.ceil(i); return s[lo] + (s[hi] - s[lo]) * (i - lo); }
+
+const scen = {}; DATA.scenarios.forEach(s => scen[s.scenario + "|" + s.basis] = s);
+
+function hero() {
+  const cp = scen["Current plan|GEM"];
+  const pos = v => Math.min(100, Math.max(0, v / 2 * 100)) + "%";
+  document.getElementById("g-num").textContent = fmt(cp.ratio_median);
+  const band = document.getElementById("g-band"); band.style.left = pos(cp.ratio_p05); band.style.width = (cp.ratio_p95 - cp.ratio_p05) / 2 * 100 + "%";
+  document.getElementById("g-med").style.left = pos(cp.ratio_median);
+  document.getElementById("g-one").style.left = pos(1);
+  document.getElementById("k-need").textContent = fmt(P.req_pace["end of 2030 (5 years)"]) + " GW/yr";
+  document.getElementById("k-named").textContent = fmt(cp.implied_pace_GW_yr) + " GW/yr";
+  document.getElementById("k-guid").textContent = fmt(P.guidance_pace) + " GW/yr";
+  document.getElementById("a-cov").textContent = pct(P.coverage);
+  document.getElementById("a-b").textContent = fmt(P.B);
+  document.getElementById("a-cf").textContent = fmt(P.coal_cf_eff);
+  document.getElementById("v-cov").textContent = fmt(P.coverage);
+  document.getElementById("t-coalgw").textContent = fmt(P.coal_gw_main, 1) + " GW";
+  document.getElementById("t-need").textContent = fmt(P.need_new_gw, 1) + " GW";
+  document.getElementById("t-pace").textContent = fmt(P.req_pace["end of 2030 (5 years)"]) + " GW per year";
+  document.getElementById("t-nproj").textContent = DATA.pipe.length;
+  const days = Math.ceil((new Date("2030-03-31") - new Date()) / 864e5);
+  if (days > 0) document.getElementById("clock").innerHTML = "Lignite exit 31 Mar 2030: <b>" + days.toLocaleString("en") + " days</b> left";
+  const ev = DATA.evidence.map(e => `<tr><td>${e.name}</td><td>${e.evidence}</td><td class="num">${e.COD ? Math.round(e.COD) : "–"}</td><td class="num">${fmt(e.GW_equity)}</td><td class="num">${fmt(e.p_main)}</td><td class="small">${e.source}</td></tr>`).join("");
+  document.getElementById("t-ev").innerHTML = `<thead><tr><th>RWE offshore project (GEM name)</th><th>Public status, Nov 2026</th><th class="num">COD</th><th class="num">GW (RWE share)</th><th class="num">p by 2030</th><th>Source</th></tr></thead><tbody>${ev}</tbody>`;
+}
+
+let PRICE = 100;
+function sector() {
+  const t = T();
+  const c = [...DATA.country].sort((a, b) => a.gap_TWh - b.gap_TWh);
+  draw("c-country", [{ type: "bar", orientation: "h", y: c.map(d => d.country), x: c.map(d => d.gap_TWh),
+    marker: { color: c.map(d => d.country === "Germany" ? t.accent : (d.gap_TWh >= 0 ? t.full : t.track)) },
+    customdata: c.map(d => [d.coal_TWh, d.exp_new_RE_TWh]),
+    hovertemplate: "%{y}<br>gap %{x:.0f} TWh<br>coal %{customdata[0]:.0f} TWh · new wind+solar %{customdata[1]:.0f} TWh<extra></extra>" }],
+    layout({ margin: { l: 110, r: 16, t: 10, b: 44 }, xaxis: { title: { text: "new wind + solar minus coal (TWh/yr)" } } }));
+  const pe = DATA.peers.filter(d => d.coal_GW >= 0.5).sort((a, b) => a.gap_TWh - b.gap_TWh);
+  draw("c-peers", [
+    { type: "bar", orientation: "h", name: "coal output", y: pe.map(d => d.company.replace(" (incl. Endesa)", "")), x: pe.map(d => -d.coal_TWh), marker: { color: t.coal },
+      hovertemplate: "%{y}: coal %{customdata:.0f} TWh<extra></extra>", customdata: pe.map(d => d.coal_TWh) },
+    { type: "bar", orientation: "h", name: "expected new wind + solar", y: pe.map(d => d.company.replace(" (incl. Endesa)", "")), x: pe.map(d => d.exp_new_RE_TWh),
+      marker: { color: pe.map(d => d.company === "RWE" ? t.accent : t.plan) }, hovertemplate: "%{y}: new %{x:.1f} TWh<extra></extra>" }],
+    layout({ barmode: "relative", showlegend: true, margin: { l: 90, r: 16, t: 30, b: 44 }, xaxis: { title: { text: "TWh per year (coal to the left)" } } }));
+  plants();
+}
+function plants() {
+  const t = T();
+  const p = [...DATA.plants].map(d => ({ ...d, cost: d.MtCO2 * PRICE / 1000 })).sort((a, b) => b.cost - a.cost).slice(0, 12).reverse();
+  draw("c-plants", [{ type: "bar", orientation: "h", y: p.map(d => d.name + " (" + d.cc + ")"), x: p.map(d => d.cost),
+    marker: { color: p.map(d => d.is_RWE ? t.accent : t.coal2) }, text: p.map(d => "€" + fmt(d.cost) + " bn"), textposition: "outside",
+    textfont: { color: t.ink2, size: 11 }, cliponaxis: false, customdata: p.map(d => [d.GW, d.MtCO2, d.kind]),
+    hovertemplate: "%{y}<br>%{customdata[2]}, %{customdata[0]:.2f} GW, %{customdata[1]:.1f} MtCO₂/yr<extra></extra>" }],
+    layout({ margin: { l: NARROW() ? 120 : 170, r: 60, t: 8, b: 44 }, yaxis: { tickfont: { size: NARROW() ? 9 : 12 } }, xaxis: { title: { text: "carbon cost (bn € per year)" } } }));
+}
+document.querySelectorAll("#price-seg button").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll("#price-seg button").forEach(x => x.setAttribute("aria-pressed", x === b)); PRICE = +b.dataset.p; plants(); }));
+
+let FLEET = "contract";
+function fleet() {
+  const t = T();
+  const c = [...DATA.coal].sort((a, b) => a.close_contract - b.close_contract || b.coal_mw - a.coal_mw);
+  const y = c.map(d => d.label + " · " + Math.round(d.coal_mw) + " MW");
+  const start = c.map(d => Math.max(d.start, 2015));
+  const traces = [{ type: "bar", orientation: "h", y, base: start, x: c.map((d, i) => d.close_contract - start[i]),
+    marker: { color: c.map(d => d.kind === "lignite" ? t.coal : t.coal2) },
+    customdata: c.map(d => [d.kind, d.close_contract, d.start]), hovertemplate: "%{y}<br>%{customdata[0]} · built %{customdata[2]} · closes %{customdata[1]}<extra></extra>" }];
+  if (FLEET === "reserve") traces.push({ type: "bar", orientation: "h", y, base: c.map(d => d.close_contract), x: c.map(d => d.close_reserve - d.close_contract),
+    marker: { color: t.bad, opacity: 0.5 }, hovertemplate: "%{y}<br>federal reserve until end 2033<extra></extra>" });
+  draw("c-fleet", traces, layout({ barmode: "overlay", margin: { l: NARROW() ? 150 : 210, r: 12, t: 10, b: 40 },
+    yaxis: { autorange: "reversed", tickfont: { size: NARROW() ? 9 : 12 } }, xaxis: { range: [2015, 2034.5], dtick: NARROW() ? 5 : 2 },
+    shapes: [{ type: "line", x0: 2030.25, x1: 2030.25, yref: "paper", y0: 0, y1: 1, line: { color: t.bad, width: 2 } }],
+    annotations: [{ x: 2030.3, yref: "paper", y: 1.02, text: "31 Mar 2030", showarrow: false, xanchor: "left", font: { color: t.bad, size: 11 } }] }));
+}
+document.querySelectorAll("#fleet-seg button").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll("#fleet-seg button").forEach(x => x.setAttribute("aria-pressed", x === b)); FLEET = b.dataset.c; fleet(); }));
+
+/* ---------- simulator ---------- */
+const S = { ontime: P.on_time, nv: 0.6, ncb: 0.85, rho: 0.5, ccf: +P.coal_cf_eff.toFixed(2) };
+let MODE = "Current plan";
+const ids = { ontime: "s-ontime", nv: "s-nv", ncb: "s-ncb", rho: "s-rho", ccf: "s-ccf" };
+function syncInputs() { for (const k in ids) { const el = document.getElementById(ids[k]); el.value = S[k]; document.getElementById("v-" + k).textContent = fmt(S[k]); el.disabled = MODE === "Full delivery" && ["ontime", "nv", "ncb"].includes(k); } }
+function simulate() {
+  const r = mulberry32(12345), n = 3000, pipe = DATA.pipe, cfr = P.cf_range;
+  const und = document.getElementById("c-und").checked, adjB = document.getElementById("c-adj").checked;
+  const denl = document.getElementById("c-denl").checked, exitO = document.getElementById("c-exit").checked;
+  let coalGW = P.coal_gw_main;
+  if (!document.getElementById("c-eems").checked) coalGW -= DATA.coal.filter(d => d.corrected).reduce((s, d) => s + d.coal_mw, 0) / 1000;
+  if (!document.getElementById("c-gkm").checked) coalGW -= DATA.coal.filter(d => d.label.startsWith("GKM")).reduce((s, d) => s + d.coal_mw, 0) / 1000;
+  const prob = pipe.map(d => {
+    if (MODE === "Full delivery") return d.p_full + (d.p_undated > 0 ? 0.8 : 0);
+    if (d.name.startsWith("Norfolk Vanguard")) return S.nv;
+    if (d.name === "Nordsee 3 wind farm" || d.name === "Delta Nordsee wind farm") return S.ncb;
+    if (d.is_off_ev) return d.p_main;
+    if (d.is_con) return P.p_con;
+    return Math.min(1, (d.p_main + (und ? d.p_undated : 0)) * S.ontime / P.on_time);
+  });
+  const keep = pipe.map(d => (!denl || d.de_nl) && (!exitO || d.in_exit));
+  const mult = pipe.map(d => (adjB && d.tech !== "offshore") ? 1 / P.coverage : 1);
+  const ratio = new Float64Array(n), gw = new Float64Array(n);
+  const ro = Math.sqrt(S.rho), ro2 = Math.sqrt(1 - S.rho), rr = Math.sqrt(0.3), rr2 = Math.sqrt(0.7);
+  for (let i = 0; i < n; i++) {
+    const zo = gauss(r), zr = gauss(r);
+    const cf = { offshore: tri(...cfr.offshore, r), onshore: tri(...cfr.onshore, r), solar: tri(...cfr.solar, r) };
+    const coalTWh = coalGW * tri(...cfr.coal, r) / cfr.coal[1] * S.ccf * H;
+    let g = 0, twh = 0;
+    for (let j = 0; j < pipe.length; j++) {
+      if (!keep[j] || prob[j] <= 0) continue;
+      const d = pipe[j], e = gauss(r);
+      const lat = d.tech === "offshore" ? ro * zo + ro2 * e : rr * zr + rr2 * e;
+      if (ncdf(lat) < prob[j]) { g += d.gw * mult[j]; twh += d.gw * mult[j] * cf[d.tech] * H; }
+    }
+    gw[i] = g; ratio[i] = twh / coalTWh;
+  }
+  const med = quant(ratio, 0.5), lo = quant(ratio, 0.05), hi = quant(ratio, 0.95), pge = ratio.filter(x => x >= 1).length / n;
+  document.getElementById("r-med").textContent = fmt(med);
+  document.getElementById("r-ci").textContent = fmt(lo) + "–" + fmt(hi);
+  document.getElementById("r-p").textContent = "≈ " + r05(pge);
+  document.getElementById("r-gw").textContent = fmt(quant(gw, 0.5), 1);
+  const pill = document.getElementById("r-pill");
+  pill.className = "pill " + (pge >= 0.66 ? "ok" : pge >= 0.33 ? "mid" : "no");
+  pill.textContent = pge >= 0.66 ? "COAL OUTPUT REPLACED: LIKELY" : pge >= 0.33 ? "ABOUT AS LIKELY AS NOT" : "NOT REPLACED: UNLIKELY";
+  const t = T();
+  draw("c-sim", [{ type: "histogram", x: Array.from(ratio), xbins: { start: 0, end: 2.6, size: 0.04 },
+    marker: { color: MODE === "Full delivery" ? t.full : t.plan, line: { color: t.panel, width: 1 } }, hovertemplate: "ratio %{x}<br>%{y} draws<extra></extra>" }],
+    layout({ xaxis: { title: { text: "replacement ratio in 2030" }, range: [0, 2.2] }, yaxis: { title: { text: "draws" } }, bargap: 0.02,
+      shapes: [{ type: "line", x0: 1, x1: 1, yref: "paper", y0: 0, y1: 1, line: { color: t.ink, dash: "dash", width: 2 } }],
+      annotations: [{ x: 1, yref: "paper", y: 1.02, text: "ratio = 1", showarrow: false, xanchor: "left", font: { color: t.ink, size: 11 } }] }));
+}
+for (const k in ids) document.getElementById(ids[k]).addEventListener("input", e => { S[k] = +e.target.value; syncInputs(); simulate(); });
+["c-und", "c-adj", "c-denl", "c-exit", "c-eems", "c-gkm"].forEach(id => document.getElementById(id).addEventListener("change", simulate));
+document.querySelectorAll("#presets button").forEach(b => b.addEventListener("click", () => {
+  MODE = b.dataset.s; if (MODE === "Current plan") Object.assign(S, { ontime: P.on_time, nv: 0.6, ncb: 0.85 }); syncInputs(); simulate(); }));
+
+/* ---------- credibility ---------- */
+function credibility() {
+  const t = T(), h = DATA.hist.filter(d => d.year >= 2010), need = P.req_pace["end of 2030 (5 years)"];
+  draw("c-adds", [
+    { type: "bar", name: "GEM-visible", x: h.map(d => d.year), y: h.map(d => d.additions_GW), marker: { color: t.accent }, hovertemplate: "%{x}: %{y:.2f} GW (GEM)<extra></extra>" },
+    { type: "bar", name: "coverage-adjusted", x: h.map(d => d.year), y: h.map(d => d.additions_adj_GW), marker: { color: t.accent, opacity: 0.35 }, hovertemplate: "%{x}: %{y:.2f} GW (adjusted)<extra></extra>" },
+    { type: "scatter", mode: "markers", name: "RWE-reported, all technologies", x: [2024, 2025], y: [2.0, 2.8], marker: { color: t.ink, symbol: "diamond", size: 10 }, hovertemplate: "%{x}: %{y} GW reported<extra></extra>" },
+    { type: "scatter", mode: "lines", name: "needed", x: [2026, 2030], y: [need, need], line: { color: t.bad, width: 3 }, hovertemplate: "needed: %{y:.2f} GW/yr<extra></extra>" }],
+    layout({ showlegend: true, barmode: "group", yaxis: { title: { text: "GW per year" } }, xaxis: { range: [2009.5, 2030.5], dtick: 2 }, margin: { l: 56, r: 16, t: 50, b: 44 } }));
+  const items = [["needed for ratio = 1", need, t.bad],
+    ["RWE guidance (incl. batteries)", P.guidance_pace, t.full],
+    ["named, dated projects", scen["Current plan|GEM"].implied_pace_GW_yr, t.plan],
+    ["best 3 years, coverage-adjusted", P.pace["coverage-adjusted"]["best 3-year average"], t.coal2],
+    ["best 3 years, GEM-visible", P.pace["GEM-visible"]["best 3-year average"], t.coal2]].reverse();
+  draw("c-pace", [{ type: "bar", orientation: "h", y: items.map(d => d[0]), x: items.map(d => d[1]), marker: { color: items.map(d => d[2]) },
+    text: items.map(d => fmt(d[1])), textposition: "outside", cliponaxis: false, textfont: { color: t.ink2 }, hovertemplate: "%{y}: %{x:.2f} GW/yr<extra></extra>" }],
+    layout({ margin: { l: NARROW() ? 140 : 200, r: 40, t: 10, b: 44 }, xaxis: { title: { text: "GW per year" } }, yaxis: { tickfont: { size: NARROW() ? 9 : 12 } } }));
+  const col = SC();
+  const rows = DATA.scenarios.map(s => `<tr><td><b style="color:${col[s.scenario]}">■</b> ${s.scenario}</td><td>${s.basis === "GEM" ? "GEM-visible" : "coverage-adjusted"}</td><td class="num">${fmt(s.new_GW_median, 1)}</td><td class="num">${fmt(s.ratio_median)}</td><td class="num">${fmt(s.ratio_p05)}–${fmt(s.ratio_p95)}</td><td class="num">≈ ${r05(s["P(ratio>=1)"])}</td></tr>`).join("");
+  document.getElementById("t-scen").innerHTML = `<thead><tr><th>Scenario</th><th>Basis</th><th class="num">New GW by 2030</th><th class="num">Ratio (median)</th><th class="num">90% interval</th><th class="num">P(ratio ≥ 1)</th></tr></thead><tbody>${rows}</tbody>`;
+}
+
+let EMCASE = "contract 2030";
+function emissions() {
+  const t = T(), col = SC();
+  const g = DATA.gap.filter(d => d["coal case"] === EMCASE);
+  draw("c-int", [{ type: "bar", x: g.map(d => d.scenario), y: g.map(d => d.intensity_t_MWh), marker: { color: g.map(d => col[d.scenario]) },
+    error_y: { type: "data", symmetric: false, array: g.map(d => d.intensity_p95 - d.intensity_t_MWh), arrayminus: g.map(d => d.intensity_t_MWh - d.intensity_p05), color: t.ink2 },
+    hovertemplate: "%{x}: %{y:.3f} t/MWh<extra></extra>" }],
+    layout({ yaxis: { title: { text: "tCO₂ per MWh (2030)" }, range: [0, 0.34] },
+      shapes: [{ type: "line", xref: "paper", x0: 0, x1: 1, y0: P.int_target, y1: P.int_target, line: { color: t.bad, dash: "dash", width: 2 } }],
+      annotations: [{ xref: "paper", x: 1, y: P.int_target, text: "SBTi target " + fmt(P.int_target, 3), showarrow: false, xanchor: "right", yshift: 10, font: { color: t.bad, size: 11 } }] }));
+  const cal = DATA.calib, ep = DATA.paths.filter(d => d.scenario === "Current plan");
+  const tr = [{ type: "scatter", mode: "lines+markers", x: cal.map(d => d.year), y: cal.map(d => d.reported_Mt), line: { color: t.ink, width: 2.5 }, name: "reported", hovertemplate: "%{x}: %{y:.1f} Mt reported<extra></extra>" },
+    { type: "scatter", mode: "lines", x: cal.map(d => d.year), y: cal.map(d => d.fitted_Mt), line: { color: t.muted, dash: "dash" }, name: "model × B", hovertemplate: "%{x}: %{y:.1f} Mt model<extra></extra>" }];
+  for (const [cs, dash, lab] of [["contract 2030", "solid", "coal closed"], ["reserve to 2033 (dispatched at 10%)", "dot", "reserve"]]) {
+    const e = ep.filter(d => d.case === cs);
+    tr.push({ type: "scatter", mode: "lines", x: [cal[cal.length - 1].year, ...e.map(d => d.year)], y: [cal[cal.length - 1].fitted_Mt, ...e.map(d => d.Mt)],
+      line: { color: t.plan, dash, width: 2.5 }, name: lab, hovertemplate: "%{x}: %{y:.1f} Mt (" + lab + ")<extra></extra>" });
+  }
+  draw("c-em", tr, layout({ showlegend: true, yaxis: { title: { text: "MtCO₂ per year" }, rangemode: "tozero" }, margin: { l: 56, r: 16, t: 40, b: 44 } }));
+  varChart();
+}
+function varChart() {
+  const t = T(), price = +document.getElementById("s-price").value;
+  document.getElementById("v-price").textContent = "€" + price + "/t";
+  const e25 = DATA.calib.find(d => d.year === 2025).reported_Mt;
+  const g = DATA.gap.filter(d => d.scenario === "Current plan");
+  const rows = [["2025 reported", e25 / P.ebitda_2025, t.muted],
+    ["2030 coal closed", g.find(d => d["coal case"] === "contract 2030").emissions_Mt / P.ebitda_2027, t.plan],
+    ["2030 with reserve", g.find(d => d["coal case"] === "reserve to 2033 (dispatched at 10%)").emissions_Mt / P.ebitda_2027, t.track]];
+  const v = rows.map(r => r[1] * price / 1000);
+  draw("c-var", [{ type: "bar", x: rows.map(r => r[0]), y: v, marker: { color: rows.map(r => r[2]) }, text: v.map(pct), textposition: "outside", textfont: { color: t.ink2 }, cliponaxis: false,
+    hovertemplate: "%{x}: %{y:.0%} of EBITDA<extra></extra>" }], layout({ yaxis: { tickformat: ".0%", range: [0, Math.max(1.6, Math.max(...v) * 1.2)] }, margin: { l: 56, r: 16, t: 20, b: 40 } }));
+}
+document.getElementById("s-price").addEventListener("input", varChart);
+document.querySelectorAll("#em-seg button").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll("#em-seg button").forEach(x => x.setAttribute("aria-pressed", x === b)); EMCASE = b.dataset.c; emissions(); }));
+function firm() {
+  const t = T(), f = P.firm;
+  const lost = f["firm capacity lost (coal)"], re = f["of which in Germany + Netherlands"], gas = f["firm from new H2-ready gas (GEM pipeline <= 2030)"];
+  draw("c-firm", [
+    { type: "bar", name: "coal closing", x: ["lost"], y: [lost], marker: { color: t.coal }, hovertemplate: "coal: %{y:.1f} GW firm<extra></extra>" },
+    { type: "bar", name: "new wind + solar (DE + NL)", x: ["gained"], y: [re], marker: { color: t.accent }, hovertemplate: "wind+solar: %{y:.2f} GW firm<extra></extra>" },
+    { type: "bar", name: "new H₂-ready gas", x: ["gained"], y: [gas], marker: { color: t.track }, hovertemplate: "gas: %{y:.1f} GW firm<extra></extra>" }],
+    layout({ barmode: "stack", showlegend: true, yaxis: { title: { text: "firm capacity (GW)" } }, margin: { l: 56, r: 16, t: 40, b: 40 } }));
+}
+
+function renderAll() { sector(); fleet(); simulate(); credibility(); emissions(); firm(); }
+hero(); syncInputs();
+let rt; window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => window.Plotly && (fleet(), plants(), credibility()), 250); });
+function boot() { if (window.Plotly) renderAll(); else setTimeout(boot, 150); }
+boot();
+try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => window.Plotly && renderAll()); } catch (e) {}
+new MutationObserver(() => window.Plotly && renderAll()).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+</script>
+
+</body>
+</html>

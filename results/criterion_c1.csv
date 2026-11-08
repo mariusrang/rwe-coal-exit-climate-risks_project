@@ -1,0 +1,6 @@
+,P(ratio>=1),median ratio,rounded,likelihood,C1 pass (P >= 0.66)
+"Current plan, GEM-visible, end 2030",0.0002,0.5118856379696879,0.0,exceptionally unlikely,False
+"Current plan, coverage-adjusted, end 2030",0.007,0.5742925787632993,0.0,exceptionally unlikely,False
+"Current plan, GEM-visible, online before 31 Mar 2030",0.0,0.4660889083613652,0.0,exceptionally unlikely,False
+"Full delivery, GEM-visible, end 2030",0.5418,1.0173153392009577,0.55,about as likely as not,False
+"Full delivery, coverage-adjusted, end 2030",0.8326,1.2194896467887182,0.85,likely,True

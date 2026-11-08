@@ -1,0 +1,5 @@
+,best 3-year average,last 10 years,required / best (end of 2030 (5 years)),required / best (31 March 2030 (4.25 years)),C2 pass (end-2030 timing),role
+GEM-visible,1.2558399999999998,0.783702,1.775001230284781,2.088236741511507,False,lower bound
+coverage-adjusted,1.947577237117239,1.2153778951803214,1.1445592516476162,1.346540296056019,False,DECISIVE
+"RWE-reported (2024-25, all technologies)",2.4,,0.9287989771003496,1.092704678941588,True,upper bound (incl. batteries)
+"coverage-adjusted, excl. pre-2023 US assets",1.1700496002770793,0.755103348987963,1.9051479052793678,2.2413504767992563,False,acquisition check

@@ -1,0 +1,31 @@
+scenario,case,year,Mt
+Track record,contract 2030,2026,55.23064477853096
+Track record,contract 2030,2027,55.23064477853096
+Track record,contract 2030,2028,52.295748607627125
+Track record,contract 2030,2029,42.074248589362
+Track record,contract 2030,2030,26.936411431547803
+Track record,reserve to 2033 (dispatched at 10%),2026,55.23064477853096
+Track record,reserve to 2033 (dispatched at 10%),2027,55.23064477853096
+Track record,reserve to 2033 (dispatched at 10%),2028,52.295748607627125
+Track record,reserve to 2033 (dispatched at 10%),2029,42.074248589362
+Track record,reserve to 2033 (dispatched at 10%),2030,29.929073812799583
+Current plan,contract 2030,2026,55.23064477853096
+Current plan,contract 2030,2027,55.23064477853096
+Current plan,contract 2030,2028,52.295748607627125
+Current plan,contract 2030,2029,42.074248589362
+Current plan,contract 2030,2030,26.936411431547803
+Current plan,reserve to 2033 (dispatched at 10%),2026,55.23064477853096
+Current plan,reserve to 2033 (dispatched at 10%),2027,55.23064477853096
+Current plan,reserve to 2033 (dispatched at 10%),2028,52.295748607627125
+Current plan,reserve to 2033 (dispatched at 10%),2029,42.074248589362
+Current plan,reserve to 2033 (dispatched at 10%),2030,29.929073812799583
+Full delivery,contract 2030,2026,55.23064477853096
+Full delivery,contract 2030,2027,55.23064477853096
+Full delivery,contract 2030,2028,52.295748607627125
+Full delivery,contract 2030,2029,42.074248589362
+Full delivery,contract 2030,2030,26.936411431547803
+Full delivery,reserve to 2033 (dispatched at 10%),2026,55.23064477853096
+Full delivery,reserve to 2033 (dispatched at 10%),2027,55.23064477853096
+Full delivery,reserve to 2033 (dispatched at 10%),2028,52.295748607627125
+Full delivery,reserve to 2033 (dispatched at 10%),2029,42.074248589362
+Full delivery,reserve to 2033 (dispatched at 10%),2030,29.929073812799583

@@ -1,0 +1,18 @@
+case,ratio_median,P(ratio>=1),P_rounded
+Base case,0.5118856379696879,0.0002,0.0
+Coverage-adjusted basis (onshore/solar ÷ 0.64),0.5742925787632993,0.007,0.0
+Undated onshore/solar included,0.6063226464609859,0.0104,0.0
+Norfolk Vanguard p = 0.3,0.46370524180387407,0.0,0.0
+Norfolk Vanguard p = 0.85,0.5479109430547091,0.0004,0.0
+Only capacity online before 31 Mar 2030,0.4660889083613652,0.0,0.0
+Germany + Netherlands pipeline only,0.11339941446130505,0.0,0.0
+Slippage factor 0.6 instead of 0.8,0.4877121475987066,0.0002,0.0
+Europe-only build rates,0.4870751413182066,0.0002,0.0
+"RWE's own per-unit build rate (0.67, optimistic)",0.5083631656457671,0.0002,0.0
+B fixed at its point estimate,0.5134447136305937,0.0,0.0
+Coal CF not calibrated (0.50 instead of 0.50 x B),0.474869118997275,0.0,0.0
+Without Eemshaven (Lab 5 / biomass conversion),0.6032285426751995,0.0056,0.0
+GKM excluded (operational control),0.5741000996012146,0.0024,0.0
+Independent projects (rho = 0),0.5056508785800846,0.0,0.0
+Full fossil exit (coal + all gas),0.20212215952677934,0.0,0.0
+"Horizon 2035 (expected value, AR7 projects included)",0.6702489282202704,,

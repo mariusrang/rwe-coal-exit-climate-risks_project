@@ -4,3 +4,5 @@ scipy>=1.13
 matplotlib>=3.8
 openpyxl>=3.1
 jupyter
+streamlit>=1.36
+plotly>=5.20

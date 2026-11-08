@@ -1,0 +1,69 @@
+name,country,tech,status,cod,gw,p_main,p_full,p_undated,is_off_ev,in_exit,de_nl,evidence,source,is_con
+Caltanissetta (RWE) solar farm,Italy,solar,announced,,0.055,0.0,0.0,0.29068968457129574,False,False,False,,GEM status rule,False
+Caltanissetta (RWE) solar farm,Italy,solar,pre-construction,,0.08,0.0,0.0,0.5813793691425915,False,False,False,,GEM status rule,False
+Florinas solar farm,Italy,solar,pre-construction,,0.02,0.0,0.0,0.5813793691425915,False,False,False,,GEM status rule,False
+Ashorne solar farm,United Kingdom,solar,pre-construction,,0.05,0.0,0.0,0.5813793691425915,False,False,False,,GEM status rule,False
+Tween Bridge solar farm,United Kingdom,solar,pre-construction,2029.0,0.6,0.5813793691425915,0.8,0.0,False,True,False,,GEM status rule,False
+360 solar farm,United States,solar,pre-construction,,0.026,0.0,0.0,0.5813793691425915,False,False,False,,GEM status rule,False
+360 solar farm,United States,solar,pre-construction,,0.026,0.0,0.0,0.5813793691425915,False,False,False,,GEM status rule,False
+Switchgrass Solar,United States,solar,announced,2026.0,0.07,0.29068968457129574,0.8,0.0,False,True,False,,GEM status rule,False
+Union Ridge Solar,United States,solar,construction,2027.0,0.108,0.95,0.98,0.0,False,True,False,,GEM status rule,True
+Campbells Bridge wind farm,Australia,onshore,announced,2029.0,1.0,0.27750853770518863,0.8,0.0,False,True,False,,GEM status rule,False
+Cattle Creek wind farm,Australia,onshore,pre-construction,2028.0,1.0,0.5550170754103773,0.8,0.0,False,True,False,,GEM status rule,False
+Southern Queensland wind farm,Australia,onshore,announced,2029.0,0.72,0.27750853770518863,0.8,0.0,False,True,False,,GEM status rule,False
+Vientos Magallanicos wind farm,Chile,onshore,pre-construction,,1.17,0.0,0.0,0.5550170754103773,False,False,False,,GEM status rule,False
+Thor Offshore wind farm,Denmark,offshore,pre-construction,2027.0,0.51,0.95,0.98,0.0,True,True,False,"under construction (RWE 51%, NBIM 49%)","RWE, 4 Jun 2025",False
+Ailes du Gâtinais wind farm,France,onshore,pre-construction,,0.0171,0.0,0.0,0.5550170754103773,False,False,False,,GEM status rule,False
+Athienville wind farm,France,onshore,pre-construction,,0.0177,0.0,0.0,0.5550170754103773,False,False,False,,GEM status rule,False
+Balinot wind farm,France,onshore,pre-construction,,0.0216,0.0,0.0,0.5550170754103773,False,False,False,,GEM status rule,False
+Ban Saint-Jean wind farm,France,onshore,pre-construction,,0.011,0.0,0.0,0.5550170754103773,False,False,False,,GEM status rule,False
+Baumes wind farm,France,onshore,pre-construction,,0.013,0.0,0.0,0.5550170754103773,False,False,False,,GEM status rule,False
+Beg Ar C'Hra wind farm,France,onshore,construction,,0.0147,0.95,0.98,0.0,False,True,False,,GEM status rule,True
+Canny wind farm,France,onshore,pre-construction,,0.0285,0.0,0.0,0.5550170754103773,False,False,False,,GEM status rule,False
+Chapelle-Sur-Chezy wind farm,France,onshore,pre-construction,,0.0228,0.0,0.0,0.5550170754103773,False,False,False,,GEM status rule,False
+Chemin de Châlons wind farm,France,onshore,pre-construction,,0.011,0.0,0.0,0.5550170754103773,False,False,False,,GEM status rule,False
+Chemin de Saint-Gilles wind farm,France,onshore,pre-construction,,0.012,0.0,0.0,0.5550170754103773,False,False,False,,GEM status rule,False
+Cinq Poiriers wind farm,France,onshore,pre-construction,,0.019,0.0,0.0,0.5550170754103773,False,False,False,,GEM status rule,False
+Croix Blanche wind farm,France,onshore,pre-construction,,0.012,0.0,0.0,0.5550170754103773,False,False,False,,GEM status rule,False
+Langonnet wind farm,France,onshore,pre-construction,,0.012,0.0,0.0,0.5550170754103773,False,False,False,,GEM status rule,False
+Les Pressoirs wind farm,France,onshore,pre-construction,,0.0285,0.0,0.0,0.5550170754103773,False,False,False,,GEM status rule,False
+Mesbrecourt-Richecourt wind farm,France,onshore,pre-construction,,0.016,0.0,0.0,0.5550170754103773,False,False,False,,GEM status rule,False
+Mont Hellet wind farm,France,onshore,pre-construction,,0.013,0.0,0.0,0.5550170754103773,False,False,False,,GEM status rule,False
+Mont Herbe wind farm,France,onshore,pre-construction,,0.013,0.0,0.0,0.5550170754103773,False,False,False,,GEM status rule,False
+Morgat wind farm,France,onshore,pre-construction,,0.011800000000000001,0.0,0.0,0.5550170754103773,False,False,False,,GEM status rule,False
+Nuisement Sur Coole wind farm,France,onshore,announced,,0.063,0.0,0.0,0.27750853770518863,False,False,False,,GEM status rule,False
+Paz'Eole wind farm,France,onshore,pre-construction,,0.011,0.0,0.0,0.5550170754103773,False,False,False,,GEM status rule,False
+Pierre-Morains et Val-des-Marais wind farm,France,onshore,pre-construction,,0.022,0.0,0.0,0.5550170754103773,False,False,False,,GEM status rule,False
+Quatre Jallois wind farm,France,onshore,pre-construction,,0.0207,0.0,0.0,0.5550170754103773,False,False,False,,GEM status rule,False
+Raisinieres wind farm,France,onshore,pre-construction,,0.023,0.0,0.0,0.5550170754103773,False,False,False,,GEM status rule,False
+Saint-Maur-sur-le-Loir wind farm,France,onshore,pre-construction,,0.033,0.0,0.0,0.5550170754103773,False,False,False,,GEM status rule,False
+Saint-Ouen-le-Mauger wind farm,France,onshore,pre-construction,,0.0285,0.0,0.0,0.5550170754103773,False,False,False,,GEM status rule,False
+Saint-Vaast-d'Equiqueville wind farm,France,onshore,pre-construction,,0.0171,0.0,0.0,0.5550170754103773,False,False,False,,GEM status rule,False
+Senan wind farm,France,onshore,pre-construction,,0.0354,0.0,0.0,0.5550170754103773,False,False,False,,GEM status rule,False
+Soudron Et Cheniers wind farm,France,onshore,pre-construction,,0.034,0.0,0.0,0.5550170754103773,False,False,False,,GEM status rule,False
+Vallée de l’Eaulne wind farm,France,onshore,pre-construction,,0.0399,0.0,0.0,0.5550170754103773,False,False,False,,GEM status rule,False
+Delta Nordsee wind farm,Germany,offshore,pre-construction,2029.0,0.2448,0.85,0.98,0.0,True,True,True,"Nordseecluster B, foundations in production, COD early 2029","RWE, 31 Aug 2026",False
+Nordsee 1 wind farm,Germany,offshore,pre-construction,2027.0,0.11475,0.95,0.98,0.0,True,True,True,"Nordseecluster A, under construction, first power Jul 2026","RWE, 31 Aug 2026",False
+Nordsee 2 wind farm,Germany,offshore,pre-construction,2027.0,0.22185,0.95,0.98,0.0,True,True,True,"Nordseecluster A, under construction, first power Jul 2026","RWE, 31 Aug 2026",False
+Nordsee 3 wind farm,Germany,offshore,pre-construction,2029.0,0.2142,0.85,0.98,0.0,True,True,True,"Nordseecluster B, foundations in production, COD early 2029","RWE, 31 Aug 2026",False
+Dublin Array offshore wind farm,Ireland,offshore,pre-construction,2027.0,0.412,0.0,0.8,0.0,False,True,False,,GEM status rule,False
+Lyrenacarriga wind farm,Ireland,onshore,pre-construction,,0.0425,0.0,0.0,0.5550170754103773,False,False,False,,GEM status rule,False
+Oranje Offshore wind farm,Netherlands,offshore,pre-construction,2027.0,0.38,0.95,0.98,0.0,True,True,True,"OranjeWind, under construction (RWE 50%, TotalEnergies 50%)","RWE, 31 Aug 2026",False
+Sønnavind wind farm,Norway,offshore,announced,2029.0,0.16866666666666666,0.0,0.8,0.0,False,True,False,,GEM status rule,False
+Sharco Duo Offshore wind farm,Poland,offshore,announced,2028.0,1.8,0.0,0.8,0.0,False,True,False,,GEM status rule,False
+Bakio wind farm,Spain,onshore,pre-construction,,0.02,0.0,0.0,0.5550170754103773,False,False,False,,GEM status rule,False
+Sollube wind farm,Spain,onshore,pre-construction,,0.026,0.0,0.0,0.5550170754103773,False,False,False,,GEM status rule,False
+Gräsås wind farm,Sweden,onshore,pre-construction,,0.04,0.0,0.0,0.5550170754103773,False,False,False,,GEM status rule,False
+Källmyrberget wind farm,Sweden,onshore,pre-construction,,0.132,0.0,0.0,0.5550170754103773,False,False,False,,GEM status rule,False
+Brochloch Rig wind farm,United Kingdom,onshore,pre-construction,,0.0248,0.0,0.0,0.5550170754103773,False,False,False,,GEM status rule,False
+Fforch Nest wind farm,United Kingdom,onshore,pre-construction,,0.035,0.0,0.0,0.5550170754103773,False,False,False,,GEM status rule,False
+Hill Of Stroupster wind farm,United Kingdom,onshore,pre-construction,,0.066,0.0,0.0,0.5550170754103773,False,False,False,,GEM status rule,False
+Sofia wind farm,United Kingdom,offshore,construction,2026.0,1.4,0.95,0.98,0.0,True,True,False,under construction,"RWE press release, 31 Aug 2026",False
+Baron Winds Farm,United States,onshore,construction,,0.113,0.95,0.98,0.0,False,True,False,,GEM status rule,True
+Forest Creek Wind Project,United States,onshore,construction,,0.127,0.95,0.98,0.0,False,True,False,,GEM status rule,True
+Forged Ethic Wind Energy Project,United States,onshore,pre-construction,,0.323,0.0,0.0,0.5550170754103773,False,False,False,,GEM status rule,False
+Honey Mesquite wind farm,United States,onshore,announced,2026.0,0.181,0.27750853770518863,0.8,0.0,False,True,False,,GEM status rule,False
+Roscoe Wind Farm Project,United States,onshore,construction,,0.1456,0.95,0.98,0.0,False,True,False,,GEM status rule,True
+Silo Bend wind farm,United States,onshore,pre-construction,2027.0,0.15,0.5550170754103773,0.8,0.0,False,True,False,,GEM status rule,False
+Norfolk Vanguard West,United Kingdom,offshore,pre-construction,2029.0,0.7,0.6,0.9,0.0,True,True,False,"AR7 CfD (Jan 2026); Vestas turbines contracted (Feb-Mar 2026); FID targeted summer 2026, no public confirmation found as of 8 Nov 2026; KKR 50%","RWE, 14 Jan, 20 Feb and 10 Mar 2026",False
+Norfolk Vanguard East,United Kingdom,offshore,pre-construction,2030.0,0.7,0.6,0.9,0.0,True,False,False,"AR7 CfD (Jan 2026); Vestas turbines contracted (Feb-Mar 2026); FID targeted summer 2026, no public confirmation found as of 8 Nov 2026; KKR 50%","RWE, 14 Jan, 20 Feb and 10 Mar 2026",False

@@ -1,0 +1,305 @@
+{
+ "source": "GEM Global Integrated Power Tracker, September 2026 V2 (CC BY 4.0)",
+ "target": 2030,
+ "now": 2025,
+ "N": 5000,
+ "H_YEAR": 8.76,
+ "cf_range": {
+  "offshore": [
+   0.33,
+   0.38,
+   0.45
+  ],
+  "onshore": [
+   0.2,
+   0.26,
+   0.33
+  ],
+  "solar": [
+   0.09,
+   0.15,
+   0.22
+  ],
+  "coal": [
+   0.4,
+   0.5,
+   0.65
+  ],
+  "gas": [
+   0.25,
+   0.4,
+   0.55
+  ]
+ },
+ "cf_mode": {
+  "offshore": 0.38,
+  "onshore": 0.26,
+  "solar": 0.15,
+  "coal": 0.5,
+  "gas": 0.4
+ },
+ "ef": {
+  "lignite": 1.15,
+  "hard coal": 0.9,
+  "gas": 0.4
+ },
+ "B": 0.9248690392378399,
+ "coal_cf_eff": 0.46243451961891996,
+ "build_rate": {
+  "offshore": 0.14346831183594033,
+  "onshore": 0.6937713442629716,
+  "solar": 0.7267242114282393
+ },
+ "on_time": 0.8,
+ "p_con": 0.95,
+ "rho": {
+  "offshore": 0.5,
+  "rest": 0.3
+ },
+ "cap_now": 12.63709,
+ "old_retiring": 0.42233333333333334,
+ "coverage": 0.6448216666666666,
+ "reported_2024": 18.0,
+ "coal_gw_main": 7.9248,
+ "coal_gw_noeems": 6.7248,
+ "coal_gw_nogkm": 7.066000000000001,
+ "coal_twh": 32.102781470225906,
+ "gas_gw": 15.73518,
+ "new_gas_gw": 1.7805,
+ "need_new_gw": 11.145587725204196,
+ "req_pace": {
+  "end of 2030 (5 years)": 2.229117545040839,
+  "31 March 2030 (4.25 years)": 2.622491229459811
+ },
+ "pace": {
+  "GEM-visible": {
+   "last 10 years": 0.783702,
+   "last 4 years": 1.009005,
+   "best 3-year average": 1.2558399999999998
+  },
+  "coverage-adjusted": {
+   "last 10 years": 1.2153778951803214,
+   "last 4 years": 1.56478147704921,
+   "best 3-year average": 1.947577237117239
+  }
+ },
+ "hist_additions_last10": [
+  0.32489999999999997,
+  0.975,
+  0.19590000000000002,
+  0.6718,
+  0.5045999999999999,
+  1.1288,
+  1.96112,
+  0.6776,
+  0.356,
+  1.0413
+ ],
+ "pipe_cf": 0.32880285646927393,
+ "int_2022": 0.55,
+ "int_target": 0.15895000000000004,
+ "ebitda_2025": 5.1,
+ "ebitda_2027": 6.5,
+ "prices": [
+  50,
+  82,
+  100,
+  150
+ ],
+ "credit": {
+  "offshore": 0.13,
+  "onshore": 0.085,
+  "solar": 0.015,
+  "coal": 0.9,
+  "gas": 0.9
+ },
+ "firm": {
+  "firm capacity lost (coal)": 7.13232,
+  "firm from new wind/solar (expected, worldwide)": 0.6227995996775404,
+  "of which in Germany + Netherlands": 0.13921960000000003,
+  "firm from new H2-ready gas (GEM pipeline <= 2030)": 1.60245,
+  "net firm gap in DE + NL (GW)": 5.3906504
+ },
+ "eu_ratio": 0.27329587518897464,
+ "metric": {
+  "GEM-visible": {
+   "Portfolio (worldwide pipeline)": 0.5152975695770068,
+   "Germany + Netherlands only": 0.11104578272466165
+  },
+  "coverage-adjusted": {
+   "Portfolio (worldwide pipeline)": 0.5863537118286555,
+   "Germany + Netherlands only": 0.11104578272466165
+  }
+ },
+ "iea_mult": {
+  "IEA main case (x2.49)": 2.486086956521739,
+  "IEA accelerated case (x2.72)": 2.7130434782608694,
+  "Tripling / NZE (x3.0)": 3.0
+ },
+ "cap22": 10.60719,
+ "scenarios": [
+  {
+   "scenario": "Current plan",
+   "basis": "GEM",
+   "new_GW_median": 5.7585749999999996,
+   "new_GW_p05": 3.5542800000000003,
+   "new_GW_p95": 7.863900000000001,
+   "ratio_median": 0.5118856379696879,
+   "ratio_p05": 0.30877809897428354,
+   "ratio_p95": 0.7220244127797107,
+   "P(ratio>=1)": 0.0002,
+   "implied_pace_GW_yr": 1.1517149999999998
+  },
+  {
+   "scenario": "Full delivery",
+   "basis": "GEM",
+   "new_GW_median": 12.214966666666665,
+   "new_GW_p05": 8.487341666666666,
+   "new_GW_p95": 13.814666666666666,
+   "ratio_median": 1.0173153392009577,
+   "ratio_p05": 0.6988166903937463,
+   "ratio_p95": 1.319238875028466,
+   "P(ratio>=1)": 0.5418,
+   "implied_pace_GW_yr": 2.442993333333333
+  },
+  {
+   "scenario": "Track record",
+   "basis": "GEM",
+   "new_GW_median": 3.83742,
+   "new_GW_p05": 2.2515,
+   "new_GW_p95": 5.8658100000000015,
+   "ratio_median": 0.3373683676192998,
+   "ratio_p05": 0.19497439775561784,
+   "ratio_p95": 0.5437822612892709,
+   "P(ratio>=1)": 0.0,
+   "implied_pace_GW_yr": 0.7674839999999999
+  },
+  {
+   "scenario": "Current plan",
+   "basis": "adjusted",
+   "new_GW_median": 6.823339116499911,
+   "new_GW_p05": 3.943366846208124,
+   "new_GW_p95": 9.955212786997954,
+   "ratio_median": 0.5742925787632993,
+   "ratio_p05": 0.34282601704870197,
+   "ratio_p95": 0.8430394597275369,
+   "P(ratio>=1)": 0.007,
+   "implied_pace_GW_yr": 1.3646678232999823
+  },
+  {
+   "scenario": "Full delivery",
+   "basis": "adjusted",
+   "new_GW_median": 15.468908802002966,
+   "new_GW_p05": 10.479808403873939,
+   "new_GW_p95": 17.641959170795715,
+   "ratio_median": 1.2194896467887182,
+   "ratio_p05": 0.8362905630383286,
+   "ratio_p95": 1.5967568745326375,
+   "P(ratio>=1)": 0.8326,
+   "implied_pace_GW_yr": 3.093781760400593
+  },
+  {
+   "scenario": "Track record",
+   "basis": "adjusted",
+   "new_GW_median": 5.951133776005252,
+   "new_GW_p05": 3.49166306963424,
+   "new_GW_p95": 9.096794204082267,
+   "ratio_median": 0.5231963891090814,
+   "ratio_p05": 0.3023694888596349,
+   "ratio_p95": 0.8433064355611566,
+   "P(ratio>=1)": 0.01,
+   "implied_pace_GW_yr": 1.1902267552010504
+  }
+ ],
+ "c1": [
+  {
+   "index": "Current plan, GEM-visible, end 2030",
+   "P(ratio>=1)": 0.0002,
+   "median ratio": 0.5118856379696879,
+   "rounded": 0.0,
+   "likelihood": "exceptionally unlikely",
+   "C1 pass (P >= 0.66)": false
+  },
+  {
+   "index": "Current plan, coverage-adjusted, end 2030",
+   "P(ratio>=1)": 0.007,
+   "median ratio": 0.5742925787632993,
+   "rounded": 0.0,
+   "likelihood": "exceptionally unlikely",
+   "C1 pass (P >= 0.66)": false
+  },
+  {
+   "index": "Current plan, GEM-visible, online before 31 Mar 2030",
+   "P(ratio>=1)": 0.0,
+   "median ratio": 0.4660889083613652,
+   "rounded": 0.0,
+   "likelihood": "exceptionally unlikely",
+   "C1 pass (P >= 0.66)": false
+  },
+  {
+   "index": "Full delivery, GEM-visible, end 2030",
+   "P(ratio>=1)": 0.5418,
+   "median ratio": 1.0173153392009577,
+   "rounded": 0.55,
+   "likelihood": "about as likely as not",
+   "C1 pass (P >= 0.66)": false
+  },
+  {
+   "index": "Full delivery, coverage-adjusted, end 2030",
+   "P(ratio>=1)": 0.8326,
+   "median ratio": 1.2194896467887182,
+   "rounded": 0.85,
+   "likelihood": "likely",
+   "C1 pass (P >= 0.66)": true
+  }
+ ],
+ "c2": [
+  {
+   "index": "GEM-visible",
+   "best 3-year average": 1.2558399999999998,
+   "last 10 years": 0.783702,
+   "required / best (end of 2030 (5 years))": 1.775001230284781,
+   "required / best (31 March 2030 (4.25 years))": 2.088236741511507,
+   "C2 pass (end-2030 timing)": false,
+   "role": "lower bound"
+  },
+  {
+   "index": "coverage-adjusted",
+   "best 3-year average": 1.947577237117239,
+   "last 10 years": 1.2153778951803214,
+   "required / best (end of 2030 (5 years))": 1.1445592516476162,
+   "required / best (31 March 2030 (4.25 years))": 1.346540296056019,
+   "C2 pass (end-2030 timing)": false,
+   "role": "DECISIVE"
+  },
+  {
+   "index": "RWE-reported (2024-25, all technologies)",
+   "best 3-year average": 2.4,
+   "last 10 years": NaN,
+   "required / best (end of 2030 (5 years))": 0.9287989771003496,
+   "required / best (31 March 2030 (4.25 years))": 1.092704678941588,
+   "C2 pass (end-2030 timing)": true,
+   "role": "upper bound (incl. batteries)"
+  },
+  {
+   "index": "coverage-adjusted, excl. pre-2023 US assets",
+   "best 3-year average": 1.1700496002770793,
+   "last 10 years": 0.755103348987963,
+   "required / best (end of 2030 (5 years))": 1.9051479052793678,
+   "required / best (31 March 2030 (4.25 years))": 2.2413504767992563,
+   "C2 pass (end-2030 timing)": false,
+   "role": "acquisition check"
+  }
+ ],
+ "mix_now": {
+  "coal": 8.3248,
+  "gas": 15.73518,
+  "wind": 11.001923333333334,
+  "solar": 1.8511666666666668,
+  "other": 2.2474499999999997
+ },
+ "guidance_pace": 3.1666666666666665,
+ "guidance_ratio": 1.4205920516446569,
+ "existing_re_2030_twh": 33.62538944495825,
+ "other_re_twh": 6.199999999999999
+}
